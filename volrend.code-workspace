@@ -1,12 +1,9 @@
 {
 	"folders": [
-		{
-			"path": "..\\instant-ngp"
-		},
-		{
-			"path": "."
-		}
-	],
+        {
+            "path": "."
+        }
+    ],
     "settings": {
         "files.associations": {
             "*.asm": "masm",
