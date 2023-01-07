@@ -1,0 +1,7 @@
+build/
+embuild/
+build-emcc/
+*.obj
+*.npy
+*.npz
+*.ply
