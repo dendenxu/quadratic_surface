@@ -91,9 +91,9 @@ void draw_imgui(VolumeRenderer& rend, N3Tree& tree, Human& human) {
     // BEGIN gizmo handling
     // clang-format off
     static glm::mat4 camera_persp_prj(1.f, 0.f, 0.f, 0.f,
-                                         0.f, 1.f, 0.f, 0.f,
-                                         0.f, 0.f, -1.f, -1.f,
-                                         0.f, 0.f, -0.001f, 0.f);
+                                      0.f, 1.f, 0.f, 0.f,
+                                      0.f, 0.f, -1.f, -1.f,
+                                      0.f, 0.f, -0.001f, 0.f);
     // clang-format on
     ImGuiIO& io = ImGui::GetIO();
 

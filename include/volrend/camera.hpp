@@ -55,7 +55,7 @@ struct Camera {
     float cx, cy;
 
     // camera space clip near & far
-    float clip_near = 1e-3;
+    float clip_near = 1e-3f;
 
     // GUI movement speed
     float movement_speed = 1.f;
