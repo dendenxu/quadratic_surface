@@ -53,8 +53,10 @@ void Camera::update(bool transform_from_vecs, bool copy_cuda) {
         c2w[3] = center;
     }
 
-    const float k_fx = fx / (0.5f * width);
-    const float k_fy = fy / (0.5f * height);
+    // const float k_fx = fx / (0.5f * width);
+    // const float k_fy = fy / (0.5f * height);
+    cx = 0.5f * width;
+    cy = 0.5f * height;
 
     /**
      * This might look a little bit confusing at first glance,
@@ -86,10 +88,16 @@ void Camera::update(bool transform_from_vecs, bool copy_cuda) {
      */
 
     // clang-format off
-    K = glm::mat4x4(k_fx,   0,      0,             0,
-                    0,      k_fy,   0,             0,
-                    0,      0,     -1.f,          -1,
-                    0,      0,     -2 * clip_near, 0);
+    // K = glm::mat4x4(k_fx,   0,      0,             0,
+    //                 0,      k_fy,   0,             0,
+    //                 0,      0,     -1.f,          -1,
+    //                 0,      0,     -2 * clip_near, 0);
+    K = glm::mat4(
+        fx, 0, 0, 0,
+        0, fy, 0, 0,
+        0, 0, -1, -1,
+        0, 0, -2 * clip_near, 0
+    );
     // clang-format on
     w2c = glm::affineInverse(glm::mat4x4(c2w));
 

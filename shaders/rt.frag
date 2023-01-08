@@ -3,19 +3,6 @@
 precision highp float;
 precision highp int;
 
-#define VOLREND_GLOBAL_BASIS_MAX 16
-
-#define FORMAT_RGBA 0
-#define FORMAT_SH 1
-#define FORMAT_SG 2
-#define FORMAT_ASG 3
-
-in highp vec4 tpose_cam_center;  // in tpose space
-in highp vec4 tpose_frag_pos;    // in tpose space
-in highp vec4 deform_frag_pos;   // in tpose space
-in highp vec4 world_frag_pos;    // interpolated fragment 3D location, in world space
-in mat4 p2t;                     // the c2w that map this FragPos to tpose location (which is also in world space)
-
 // The output color
 out vec4 frag_color;
 
@@ -172,6 +159,7 @@ vec3 draw_quadric(in mat4 shape, in vec4 ro, in vec4 rd) {
     // intersect the bounding box first and use the intersected origin for solving the quadric
     // idea from mla: https://www.shadertoy.com/view/wdlBR2
     if (intersect_box(ro, rd, ro) && intersect_quadric(shape, ro, rd, coll_point)) {
+        // if (intersect_quadric(shape, ro, rd, coll_point)) {
         // some simple fake shading for now
         return normalize((shape * vec4(coll_point, 1.0)).xyz) / 2.0 + 0.5;
     } else {

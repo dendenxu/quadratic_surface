@@ -150,7 +150,6 @@ void draw_imgui(VolumeRenderer& rend
         ImGui::InputFloat3("center", glm::value_ptr(cam.center));
         ImGui::InputFloat3("origin", glm::value_ptr(cam.origin));
         ImGui::SliderFloat("clip_near", &cam.clip_near, 0.0001f, 10.f);
-        // ImGui::InputFloat("clip_near", &cam.clip_near);
 
         static bool lock_fx_fy = true;
         static float fx = cam.fx;  // gui state variable for duplication
@@ -160,15 +159,13 @@ void draw_imgui(VolumeRenderer& rend
             if (ImGui::SliderFloat("focal", &cam.fx, 10.f, 50000.f)) {
                 cam.fy = cam.fx;
             }
-            // if (ImGui::InputFloat("focal", &cam.fx)) {
-            //     cam.fy = cam.fx;
-            // }
         } else {
             ImGui::SliderFloat("fx", &cam.fx, 10.f, 50000.f);
             ImGui::SliderFloat("fy", &cam.fy, 10.f, 50000.f);
             ImGui::InputFloat("fx", &cam.fx);
             ImGui::InputFloat("fy", &cam.fy);
         }
+
         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
         if (ImGui::TreeNode("Directions")) {
             ImGui::InputFloat3("world_up", glm::value_ptr(world_up_tmp));
