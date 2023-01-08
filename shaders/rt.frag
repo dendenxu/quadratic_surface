@@ -19,6 +19,9 @@ struct Camera {
 
 struct Quadric {
     mat4x4 shape;
+    float eps;
+    int samples;
+    float box_size;
 };
 
 uniform Camera cam;
@@ -27,9 +30,9 @@ uniform Camera cam;
 // based on the paper: Ray Tracing Arbitrary Objects on the GPU, A. Wood et al
 uniform Quadric qua;
 
-const float EPSILON = 0.000001;
-
-const int samples = 4;  // per x,y per fragment
+// const float box_size = 0.5;
+// const float eps = 0.000001;
+// const int samples = 4;  // per x,y per fragment
 
 bool getPointAtTime(in float t, in vec4 ro, in vec4 rd, out vec3 point) {
     if (t < 0.0) {
@@ -37,7 +40,7 @@ bool getPointAtTime(in float t, in vec4 ro, in vec4 rd, out vec3 point) {
     }
     point = ro.xyz + t * rd.xyz;
     // constrain to a box
-    return all(greaterThanEqual(point, vec3(-0.5 - EPSILON))) && all(lessThanEqual(point, vec3(0.5 + EPSILON)));
+    return all(greaterThanEqual(point, vec3(-qua.box_size - qua.eps))) && all(lessThanEqual(point, vec3(qua.box_size + qua.eps)));
 }
 
 // adapted from https://iquilezles.org/articles/intersectors
@@ -63,8 +66,8 @@ bool intersect_quadric(in mat4 shape, in vec4 ro, in vec4 rd, out vec3 point) {
     float b = dot(ro, rda) + dot(rd, roa);
     float c = dot(ro, roa);
 
-    if (abs(a) < EPSILON) {
-        if (abs(b) < EPSILON) {
+    if (abs(a) < qua.eps) {
+        if (abs(b) < qua.eps) {
             return getPointAtTime(c, ro, rd, point);
         }
 
@@ -73,7 +76,7 @@ bool intersect_quadric(in mat4 shape, in vec4 ro, in vec4 rd, out vec3 point) {
 
     float square = b * b - 4.0 * a * c;
 
-    if (square < EPSILON) {
+    if (square < qua.eps) {
         return false;  // no hit
     }
 
@@ -114,8 +117,8 @@ vec3 draw_quadric(in mat4 shape, in vec4 ro, in vec4 rd) {
 
     // intersect the bounding box first and use the intersected origin for solving the quadric
     // idea from mla: https://www.shadertoy.com/view/wdlBR2
-    if (intersect_box(ro, rd, ro) && intersect_quadric(shape, ro, rd, coll_point)) {
-        // if (intersect_quadric(shape, ro, rd, coll_point)) {
+    // if (intersect_box(ro, rd, ro) && intersect_quadric(shape, ro, rd, coll_point)) {
+    if (intersect_quadric(shape, ro, rd, coll_point)) {
         // some simple fake shading for now
         return normalize((shape * vec4(coll_point, 1.0)).xyz) / 2.0 + 0.5;
     } else {
@@ -135,11 +138,11 @@ void main() {
     vec3 ray_target = vec3((gl_FragCoord.xy / cam.reso.xy) * 2.0 - 1.0, 1.0);
     ray_target.y /= aspect_ratio;
 
-    vec2 ray_step = (1.0 / cam.reso.xy) / float(samples);
+    vec2 ray_step = (1.0 / cam.reso.xy) / float(qua.samples);
     mat4 rot_matrix = mat4(cam.c2w);
     vec3 result = vec3(0.0);
-    for (int y = 0; y < samples; y++) {
-        for (int x = 0; x < samples; x++) {
+    for (int y = 0; y < qua.samples; y++) {
+        for (int x = 0; x < qua.samples; x++) {
             vec3 ray_dir = normalize(ray_target + vec3(ray_step * vec2(x, y), 0.0) - ray_position);
             vec4 new_dir = rot_matrix * vec4(ray_dir, 0.0);
             vec4 new_pos = rot_matrix * vec4(ray_position, 1.0);
@@ -151,5 +154,5 @@ void main() {
         }
     }
 
-    frag_color = vec4(result / float(samples * samples), 1.0);
+    frag_color = vec4(result / float(qua.samples * qua.samples), 1.0);
 }

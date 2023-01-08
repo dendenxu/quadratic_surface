@@ -29,18 +29,6 @@ const char* GUIDE_MESH_VERT_SHADER_SRC =
     R"glsl(
 #version 330
 #pragma vscode_glsllint_stage: vert
-
-// Computer vision style camera
-struct Camera {
-    mat4x3 c2w;
-    mat4x4 w2c;
-    mat4x4 K;
-    mat4x4 inv_K;
-    vec2 reso;
-    vec2 focal;
-    vec3 center;
-};
-uniform Camera cam;
 layout(location=0) in vec3 a_pos; // location 0
 
 // pass through shader
@@ -78,6 +66,9 @@ struct RenderUniforms {
 
     struct {
         GLint shape;
+        GLint eps;
+        GLint samples;
+        GLint box_size;
     } qua;
 };
 
@@ -108,15 +99,18 @@ struct VolumeRenderer::Impl {
         glUseProgram(program);  // using tree shader
 
         glUniformMatrix4x3fv(u.cam.c2w, 1, GL_FALSE, glm::value_ptr(camera.c2w));
-        glUniformMatrix4fv(u.cam.w2c, 1, GL_FALSE, glm::value_ptr(camera.w2c));      // loading camera w2c to GPU
-        glUniformMatrix4fv(u.cam.K, 1, GL_FALSE, glm::value_ptr(camera.K));          // loading camera K
-        glUniformMatrix4fv(u.cam.inv_K, 1, GL_FALSE, glm::value_ptr(camera.inv_K));  // loading camera inv_K
-
-        glUniformMatrix4fv(u.qua.shape, 1, GL_FALSE, glm::value_ptr(quadric.Q()));  // loading camera inv_K
-        glUniform3fv(u.cam.center, 1, glm::value_ptr(camera.center));               // loading camera inv_K
-
+        glUniformMatrix4fv(u.cam.w2c, 1, GL_FALSE, glm::value_ptr(camera.w2c));      // camera w2c to GPU
+        glUniformMatrix4fv(u.cam.K, 1, GL_FALSE, glm::value_ptr(camera.K));          // camera intrinsics
+        glUniformMatrix4fv(u.cam.inv_K, 1, GL_FALSE, glm::value_ptr(camera.inv_K));  // camera inverse intrinsics
+        glUniform3fv(u.cam.center, 1, glm::value_ptr(camera.center));                // camera center
         glUniform2f(u.cam.focal, camera.fx, camera.fy);
         glUniform2f(u.cam.reso, (float)camera.width, (float)camera.height);
+
+        glUniformMatrix4fv(u.qua.shape, 1, GL_FALSE, glm::value_ptr(quadric.Q()));  // loading camera inv_K
+        glUniform1f(u.qua.eps, quadric.eps);
+        glUniform1f(u.qua.box_size, quadric.box_size);
+        glUniform1i(u.qua.samples, quadric.samples);
+
         glBindVertexArray(vao_quad);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
         glBindVertexArray(0);
@@ -140,7 +134,11 @@ struct VolumeRenderer::Impl {
         u.cam.center = glGetUniformLocation(program, "cam.center");
         u.cam.focal = glGetUniformLocation(program, "cam.focal");
         u.cam.reso = glGetUniformLocation(program, "cam.reso");
+
         u.qua.shape = glGetUniformLocation(program, "qua.shape");
+        u.qua.eps = glGetUniformLocation(program, "qua.eps");
+        u.qua.box_size = glGetUniformLocation(program, "qua.box_size");
+        u.qua.samples = glGetUniformLocation(program, "qua.samples");
     }
 
     void quad_init() {

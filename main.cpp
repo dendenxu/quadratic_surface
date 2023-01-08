@@ -92,7 +92,7 @@ void draw_imgui(VolumeRenderer& rend
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGui::SetNextWindowPos(ImVec2(20.f, 20.f), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(340.f, 650.f), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(400.f, 800.f), ImGuiCond_Once);
 
     static char title[128] = {0};
     if (title[0] == 0) {
@@ -189,16 +189,30 @@ void draw_imgui(VolumeRenderer& rend
 
     ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
     if (ImGui::CollapsingHeader("Quadric")) {
-        ImGui::SliderFloat("A", &quadric.A, -10.0f, 10.f);
-        ImGui::SliderFloat("B", &quadric.B, -10.0f, 10.f);
-        ImGui::SliderFloat("C", &quadric.C, -10.0f, 10.f);
-        ImGui::SliderFloat("D", &quadric.D, -10.0f, 10.f);
-        ImGui::SliderFloat("E", &quadric.E, -10.0f, 10.f);
-        ImGui::SliderFloat("F", &quadric.F, -10.0f, 10.f);
-        ImGui::SliderFloat("G", &quadric.G, -10.0f, 10.f);
-        ImGui::SliderFloat("H", &quadric.H, -10.0f, 10.f);
-        ImGui::SliderFloat("I", &quadric.I, -10.0f, 10.f);
-        ImGui::SliderFloat("J", &quadric.J, -10.0f, 10.f);
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+        if (ImGui::TreeNode("Parameters")) {
+            ImGui::SliderFloat("A", &quadric.A, -10.0f, 10.f);
+            ImGui::SliderFloat("B", &quadric.B, -10.0f, 10.f);
+            ImGui::SliderFloat("C", &quadric.C, -10.0f, 10.f);
+            ImGui::SliderFloat("D", &quadric.D, -10.0f, 10.f);
+            ImGui::SliderFloat("E", &quadric.E, -10.0f, 10.f);
+            ImGui::SliderFloat("F", &quadric.F, -10.0f, 10.f);
+            ImGui::SliderFloat("G", &quadric.G, -10.0f, 10.f);
+            ImGui::SliderFloat("H", &quadric.H, -10.0f, 10.f);
+            ImGui::SliderFloat("I", &quadric.I, -10.0f, 10.f);
+            ImGui::SliderFloat("J", &quadric.J, -10.0f, 10.f);
+            ImGui::TreePop();
+        }
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+        if (ImGui::TreeNode("Rendering")) {
+            static float inv_eps = 1 / quadric.eps;
+            ImGui::SliderFloat("box_size", &quadric.box_size, 0.001f, 10.f);
+            ImGui::SliderInt("samples ^ 1/2", &quadric.samples, 1, 10);  // super sampling ratio
+            if (ImGui::SliderFloat("1 / epsilon", &inv_eps, 0.0f, 10000000.f)) {
+                quadric.eps = 1 / inv_eps;
+            };
+            ImGui::TreePop();
+        }
     }
 
     ImGui::End();

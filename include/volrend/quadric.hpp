@@ -6,7 +6,6 @@
 
 #include "volrend/mesh.hpp"
 
-
 namespace volrend {
 
 // const mat4 hyperbolicParaboloid = mat4(
@@ -35,6 +34,10 @@ struct Quadric {
     float H = 0.0f;
     float I = 1.0f;
     float J = 0.0f;
+
+    float eps = 0.000001f;
+    float box_size = 0.5f;
+    int samples = 4;
 
     glm::mat4 Q() const {
         return glm::mat4(
