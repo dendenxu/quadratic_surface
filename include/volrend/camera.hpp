@@ -73,7 +73,7 @@ struct Camera {
    private:
     // For dragging
     struct DragState;
-    std::unique_ptr<DragState> drag_state_;
+    std::unique_ptr<DragState> drag_state;
 };
 
 }  // namespace volrend

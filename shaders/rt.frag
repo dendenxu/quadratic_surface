@@ -202,7 +202,7 @@ void main() {
 
             // quadrics
             vec3 pixel = vec3(0.0);
-            pixel += draw_quadric(ellipticParaboloid, new_pos, new_dir);
+            pixel += draw_quadric(hyperbolicParaboloid, new_pos, new_dir);
             result += clamp(pixel, 0.0, 1.0);
         }
     }

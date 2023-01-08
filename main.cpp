@@ -219,7 +219,7 @@ void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, in
         case GLFW_KEY_E:
         case GLFW_KEY_Q: {
             // Camera movement
-            float speed = 0.002f;
+            float speed = 0.1f;
             if (mods & GLFW_MOD_SHIFT) speed *= 5.f;
             if (key == GLFW_KEY_S || key == GLFW_KEY_A || key == GLFW_KEY_E)
                 speed = -speed;
@@ -336,7 +336,7 @@ void glfw_mouse_button_callback(GLFWwindow* window, int button, int action,
         const bool SHIFT = mods & GLFW_MOD_SHIFT;
         cam.begin_drag((float)x, (float)y,
                        SHIFT || button == GLFW_MOUSE_BUTTON_MIDDLE,
-                       button == GLFW_MOUSE_BUTTON_RIGHT || (button == GLFW_MOUSE_BUTTON_MIDDLE && SHIFT));
+                       button == GLFW_MOUSE_BUTTON_LEFT || (button == GLFW_MOUSE_BUTTON_MIDDLE && SHIFT));
     } else if (action == GLFW_RELEASE) {
         cam.end_drag();
     }
@@ -391,7 +391,7 @@ GLFWwindow* glfw_init(const int width, const int height) {
 
     // ignore vsync for now
     // in some G-Sync enabled systems, you may get a consistent 160 fps
-    // when it should actually have been a few thousands
+    // when actually it should have been a few thousands
     glfwSwapInterval(0);
 
     // only copy r/g/b
