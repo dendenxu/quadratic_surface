@@ -26,9 +26,9 @@ __host__ __device__ __inline__ static void screen2worlddir(
         scalar_t* cen) {
     scalar_t xyz[3] ={ (ix - 0.5f * cam.width) / cam.fx,
                     -(iy - 0.5f * cam.height) / cam.fy, -1.0f};
-    _mv3(cam.transform, xyz, out);
+    _mv3(cam.c2w, xyz, out);
     _normalize(out);
-    _copy3(cam.transform + 9, cen);
+    _copy3(cam.c2w + 9, cen);
 }
 template<typename scalar_t>
 __host__ __device__ __inline__ void maybe_world2ndc(
@@ -111,7 +111,7 @@ __global__ static void render_kernel(
             enable_draw = false;
             if (tree.data_format.basis_dim >= 0) {
                 cen[2] = -sqrtf(1 - c);
-                _mv3(cam.transform, cen, dir);
+                _mv3(cam.c2w, cen, dir);
 
                 internal::maybe_precalc_basis(tree, dir, basis_fn);
                 for (int t = 0; t < 3; ++t) {

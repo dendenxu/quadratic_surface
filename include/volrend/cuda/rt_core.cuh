@@ -119,7 +119,7 @@ __device__ __inline__ void trace_ray(
 // CUSTOM TRANSFORMATION
 #ifdef USE_CUSTOM_TRANSFORMATION
         scalar_t transformed[3];
-        scalar_t transform[9] = {0, 1, 0, 1, 0, 0, 0, 0, 1};
+        scalar_t c2w[9] = {0, 1, 0, 1, 0, 0, 0, 0, 1};
         scalar_t identity[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
 #endif  //USE_CUSTOM_TRANSFORMATION \
     // CUSTOM TRANSFORMATION
@@ -136,7 +136,7 @@ __device__ __inline__ void trace_ray(
             scalar_t weightted_transform[9];
 #pragma unroll 9
             for (int i = 0; i < 9; i++) {
-                weightted_transform[i] = transform[i] * weight + (1 - weight) * identity[i];
+                weightted_transform[i] = c2w[i] * weight + (1 - weight) * identity[i];
             }
             _mv3(weightted_transform, pos, transformed);
             _copy3(transformed, pos);

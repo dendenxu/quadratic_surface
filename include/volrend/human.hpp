@@ -70,8 +70,8 @@ struct Human {
 
     // void mutable_select_pose(int *index);
     void load_poses_npz(const std::string &path);
-    void select_pose(int index);   // load pose and transform into transforma matrix, with blend shapes
-    void update_pose(int index);   // load pose and transform into transforma matrix
+    void select_pose(int index);   // load pose and c2w into transforma matrix, with blend shapes
+    void update_pose(int index);   // load pose and c2w into transforma matrix
     void update_verts(int index);  // load blend shapes into specific
 
     void update_bigrigid();
@@ -88,21 +88,21 @@ struct Human {
 
     // FIXME: constraint on number of poses and rs/ts
     std::vector<glm::vec3> all_poses;  // ! need to create a 2d view of this
-    std::vector<glm::vec3> all_rs;     // pose specific transform
-    std::vector<glm::vec3> all_ts;     // pose specific transform
+    std::vector<glm::vec3> all_rs;     // pose specific c2w
+    std::vector<glm::vec3> all_ts;     // pose specific c2w
     std::vector<float> blend_shapes;   // ! need to create a 2d view of this
 
-    // // Model transform, rotation is axis-angle
+    // // Model c2w, rotation is axis-angle
     // glm::vec3 rotation, translation;
     // float scale = 1.f;
 
-    // Computed transform and rigid transform for bones
+    // Computed c2w and rigid c2w for bones
     // TODO: These should be initialized
     // Note: human will be created upon launching of the program
     // all data except "rigid" is 0
     // and "rigid" is 24 matrix of all zeros
     // Except that, they really should be initailized to eye matrices
-    glm::mat4 transform = glm::mat4(1.0f);
+    glm::mat4 c2w = glm::mat4(1.0f);
     std::vector<glm::mat4> rigid = std::vector<glm::mat4>(24, glm::mat4(1.0f));
 
     std::string name = "Human";
@@ -145,7 +145,7 @@ struct Human {
         [ 0.       ,  0.       ,  0.       ],
         [ 0.       ,  0.       ,  0.       ],
         [ 0.       ,  0.       ,  0.       ]], dtype=float32)
-    * we need to first transform points to tpose and then to bigpose to get the correct sampling location (octree lives in bigpose space)
+    * we need to first c2w points to tpose and then to bigpose to get the correct sampling location (octree lives in bigpose space)
     */
     std::vector<glm::vec3> bigposes = std::vector<glm::vec3>(24, glm::vec3(0.0f));
     std::vector<glm::mat4> bigrigid = std::vector<glm::mat4>(24, glm::mat4(1.0f));

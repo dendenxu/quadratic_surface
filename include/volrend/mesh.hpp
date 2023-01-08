@@ -27,20 +27,20 @@ struct Mesh {
     // appropriately
     void repeat(int n);
 
-    // Apply affine transform directly to the vertices (rotation is axis-angle)
+    // Apply affine c2w directly to the vertices (rotation is axis-angle)
     void apply_transform(glm::vec3 r, glm::vec3 t, int start = 0, int end = -1);
-    void apply_transform(glm::mat4 transform, int start = 0, int end = -1);
+    void apply_transform(glm::mat4 c2w, int start = 0, int end = -1);
 
     // Vertex positions
     std::vector<float> vert;
     // Triangle indices
     std::vector<unsigned int> faces;
 
-    // Model transform, rotation is axis-angle
+    // Model c2w, rotation is axis-angle
     glm::vec3 rotation, translation;
     float scale = 1.f;
 
-    // Computed transform
+    // Computed c2w
     mutable glm::mat4 transform_;
 
     int face_size;

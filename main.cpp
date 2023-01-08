@@ -108,7 +108,7 @@ void draw_imgui(VolumeRenderer& rend
     ImGuizmo::BeginFrame();
 
     ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-    glm::mat4 w2c = glm::affineInverse(glm::mat4(cam.transform));
+    glm::mat4 w2c = glm::affineInverse(glm::mat4(cam.c2w));
     // END gizmo handling
 
     ImGui::SetNextWindowPos(ImVec2(20.f, 20.f), ImGuiCond_Once);
@@ -254,10 +254,10 @@ void draw_imgui(VolumeRenderer& rend
         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
         if (ImGui::TreeNode("Transform")) {
             ImGui::Checkbox("Lock Transform", &cam.lock_trans);
-            ImGui::InputFloat3("x", &cam.transform[0][0]);
-            ImGui::InputFloat3("y", &cam.transform[1][0]);
-            ImGui::InputFloat3("z", &cam.transform[2][0]);
-            ImGui::InputFloat3("t", &cam.transform[3][0]);
+            ImGui::InputFloat3("x", &cam.c2w[0][0]);
+            ImGui::InputFloat3("y", &cam.c2w[1][0]);
+            ImGui::InputFloat3("z", &cam.c2w[2][0]);
+            ImGui::InputFloat3("t", &cam.c2w[3][0]);
             ImGui::TreePop();
         }
     }  // End camera node
@@ -626,7 +626,7 @@ void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, in
             for (int i = 0; i < 3; ++i) {
                 for (int j = 0; j < 4; ++j) {
                     if (j) puts(" ");
-                    printf("%.10f", cam.transform[j][i]);
+                    printf("%.10f", cam.c2w[j][i]);
                 }
                 puts("\n");
             }
@@ -826,14 +826,14 @@ int main(int argc, char* argv[]) {
     cxxoptions.add_options()
         ("nogui", "disable imgui", cxxopts::value<bool>())
         ("center", "camera center position (world); ignored for NDC",
-                cxxopts::value<std::vector<float>>()->default_value("-3.5,0,3.5"))
+                cxxopts::value<std::vector<float>>()->default_value("0,0,-10.0"))
         ("back", "camera's back direction unit vector (world) for orientation; ignored for NDC",
-                cxxopts::value<std::vector<float>>()->default_value("-0.7071068,0,0.7071068"))
+                cxxopts::value<std::vector<float>>()->default_value("1,0,1"))
         ("origin", "origin for right click rotation controls; ignored for NDC",
                 cxxopts::value<std::vector<float>>()->default_value("0,0,0"))
         ("world_up", "world up direction for rotating controls e.g. "
                      "0,0,1=blender; ignored for NDC",
-                cxxopts::value<std::vector<float>>()->default_value("0,0,1"))
+                cxxopts::value<std::vector<float>>()->default_value("0,1,0"))
         ("grid", "show grid with given max resolution (4 is reasonable)", cxxopts::value<int>())
         ("probe", "enable lumisphere_probe and place it at given x,y,z",
                    cxxopts::value<std::vector<float>>())
@@ -844,12 +844,12 @@ int main(int argc, char* argv[]) {
 
     cxxopts::ParseResult args = internal::parse_options(cxxoptions, argc, argv);
 
-#ifdef VOLREND_CUDA
-    const int device_id = args["gpu"].as<int>();
-    if (~device_id) {
-        cuda(SetDevice(device_id));
-    }
-#endif
+// #ifdef VOLREND_CUDA
+//     const int device_id = args["gpu"].as<int>();
+//     if (~device_id) {
+//         cuda(SetDevice(device_id));
+//     }
+// #endif
 
     int width = args["width"].as<int>(), height = args["height"].as<int>();
     float fx = args["fx"].as<float>();

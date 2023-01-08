@@ -34,9 +34,10 @@ const char* GUIDE_MESH_VERT_SHADER_SRC =
 
 // Computer vision style camera
 struct Camera {
-    mat4x3 transform;
+    mat4x3 c2w;
     mat4x4 w2c;
     mat4x4 K;
+    mat4x4 inv_K;
     vec2 reso;
     vec2 focal;
 };
@@ -101,7 +102,7 @@ layout(location=0) in vec3 a_pos; // location 0
 // layout(location=3) in vec4 a_blend_weights; // blending weight
 // layout(location=4) in vec4 a_bone_assoc; // bone index for blending weight
 
-// out highp vec4 tpose_cam_center;
+// out highp vec4 tpose_cam.center;
 // out highp vec4 tpose_frag_pos;
 // out highp vec4 deform_frag_pos;
 // out highp vec4 world_frag_pos;
@@ -129,8 +130,15 @@ const float quad_verts[] = {
     0.5f,
 };
 
-struct _RenderUniforms {
-    GLint cam_transform, cam_focal, cam_reso, cam_K, cam_w2c;
+struct RenderUniforms {
+    struct {
+        GLint c2w;
+        GLint w2c;
+        GLint focal;
+        GLint reso;
+        GLint K;
+        GLint inv_K;
+    } cam;
     // GLint opt_step_size, opt_backgrond_brightness, opt_stop_thresh,
     //     opt_sigma_thresh, opt_render_bbox, opt_basis_minmax, opt_rot_dirs, opt_t_off_in, opt_t_off_out, opt_use_offset, opt_visualize_offset, opt_visualize_unseen, opt_visualize_intensity, opt_vis_offset_multiplier, opt_vis_color_multiplier, opt_vis_color_offset,
     //     opt_apply_sigmoid,
@@ -311,15 +319,16 @@ struct VolumeRenderer::Impl {
         glUseProgram(program);  // using tree shader
 
         // FIXME reduce uniform transfers?
-        glUniformMatrix4x3fv(u.cam_transform, 1, GL_FALSE, glm::value_ptr(camera.transform));
-        glUniformMatrix4fv(u.cam_w2c, 1, GL_FALSE, glm::value_ptr(camera.w2c));                         // loading camera w2c to GPU
-        glUniformMatrix4fv(u.cam_K, 1, GL_FALSE, glm::value_ptr(camera.K));                             // loading camera K
+        glUniformMatrix4x3fv(u.cam.c2w, 1, GL_FALSE, glm::value_ptr(camera.c2w));
+        glUniformMatrix4fv(u.cam.w2c, 1, GL_FALSE, glm::value_ptr(camera.w2c));      // loading camera w2c to GPU
+        glUniformMatrix4fv(u.cam.K, 1, GL_FALSE, glm::value_ptr(camera.K));          // loading camera K
+        glUniformMatrix4fv(u.cam.inv_K, 1, GL_FALSE, glm::value_ptr(camera.inv_K));  // loading camera inv_K
         // glUniformMatrix4fv(u.rigid, POSE_BONE_SZ, GL_FALSE, (GLfloat*)(&human->rigid[0]));              // rigid transformation for linear blend skinning
         // glUniformMatrix4fv(u.bigrigid, POSE_BONE_SZ, GL_FALSE, (GLfloat*)(&human->get_bigrigid()[0]));  // rigid transformation for linear blend skinning
         // glUniformMatrix4fv(u.M, 1, GL_FALSE, glm::value_ptr(human->transform));                         // rigid transformation for linear blend skinning
 
-        glUniform2f(u.cam_focal, camera.fx, camera.fy);
-        glUniform2f(u.cam_reso, (float)camera.width, (float)camera.height);
+        glUniform2f(u.cam.focal, camera.fx, camera.fy);
+        glUniform2f(u.cam.reso, (float)camera.width, (float)camera.height);
         // glUniform1f(u.opt_step_size, options.step_size);  // TODO: poor naming
         // glUniform1f(u.opt_backgrond_brightness, options.background_brightness);
         // glUniform1f(u.opt_stop_thresh, options.stop_thresh);
@@ -457,51 +466,51 @@ struct VolumeRenderer::Impl {
     }
 
     void upload_data() {
-//         const GLint data_size = tree->capacity * tree->N * tree->N * tree->N * tree->data_dim;
-//         size_t width, height;
-//         auto_size_2d(data_size, width, height, tree->data_dim);
-//         const size_t pad = width * height - data_size;
+        //         const GLint data_size = tree->capacity * tree->N * tree->N * tree->N * tree->data_dim;
+        //         size_t width, height;
+        //         auto_size_2d(data_size, width, height, tree->data_dim);
+        //         const size_t pad = width * height - data_size;
 
-//         glUseProgram(program);  // ? do we need this line?
+        //         glUseProgram(program);  // ? do we need this line?
 
-//         glUniform1i(glGetUniformLocation(program, "tree_data_dim"), (GLsizei)width);  // y axis align
+        //         glUniform1i(glGetUniformLocation(program, "tree_data_dim"), (GLsizei)width);  // y axis align
 
-// #ifdef __EMSCRIPTEN__
-//         tree->data_.data_holder.resize((data_size + pad) * sizeof(half));
-//         glBindTexture(GL_TEXTURE_2D, tex_tree_data);
-//         glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, width, height, 0, GL_RED,
-//                      GL_HALF_FLOAT, tree->data_.data<half>());
-// #else
-//         // FIXME: there seems to be some weird bug in the NVIDIA OpenGL
-//         // implementation where GL_HALF_FLOAT is sometimes ignored, and we have
-//         // to use float32 for uploads
-//         std::vector<float> tmp(data_size + pad);
-//         std::copy(tree->data_.data<half>(),
-//                   tree->data_.data<half>() + data_size, tmp.begin());
-//         glBindTexture(GL_TEXTURE_2D, tex_tree_data);
+        // #ifdef __EMSCRIPTEN__
+        //         tree->data_.data_holder.resize((data_size + pad) * sizeof(half));
+        //         glBindTexture(GL_TEXTURE_2D, tex_tree_data);
+        //         glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, width, height, 0, GL_RED,
+        //                      GL_HALF_FLOAT, tree->data_.data<half>());
+        // #else
+        //         // FIXME: there seems to be some weird bug in the NVIDIA OpenGL
+        //         // implementation where GL_HALF_FLOAT is sometimes ignored, and we have
+        //         // to use float32 for uploads
+        //         std::vector<float> tmp(data_size + pad);
+        //         std::copy(tree->data_.data<half>(),
+        //                   tree->data_.data<half>() + data_size, tmp.begin());
+        //         glBindTexture(GL_TEXTURE_2D, tex_tree_data);
 
-//         /**
-//          * The format (7th argument), together with the type argument, describes the data you pass in as the last argument. So the format/type combination defines the memory layout of the data you pass in.
+        //         /**
+        //          * The format (7th argument), together with the type argument, describes the data you pass in as the last argument. So the format/type combination defines the memory layout of the data you pass in.
 
-//          * internalFormat (2nd argument) defines the format that OpenGL should use to store the data internally.
-//          */
-//         glTexImage2D(
-//             GL_TEXTURE_2D,     // Specifies the target texture.
-//             0,                 // Level n is the nth mipmap reduction image
-//             GL_R16F,           // Specifies the number of color components in the texture. (internalformat)
-//             (GLsizei)width,    // Specifies the width of the texture image.
-//             (GLsizei)height,   // Specifies the width of the texture image.
-//             0,                 // This value must be 0.
-//             GL_RED,            // Specifies the format of the pixel data. Should mean one float for this
-//             GL_FLOAT,          // Specifies the data type of the pixel data.
-//             (void*)tmp.data()  // Specifies a pointer to the image data in memory.
-//         );
-// #endif
-//         // specify minify/magnify interpolation method
-//         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        //          * internalFormat (2nd argument) defines the format that OpenGL should use to store the data internally.
+        //          */
+        //         glTexImage2D(
+        //             GL_TEXTURE_2D,     // Specifies the target texture.
+        //             0,                 // Level n is the nth mipmap reduction image
+        //             GL_R16F,           // Specifies the number of color components in the texture. (internalformat)
+        //             (GLsizei)width,    // Specifies the width of the texture image.
+        //             (GLsizei)height,   // Specifies the width of the texture image.
+        //             0,                 // This value must be 0.
+        //             GL_RED,            // Specifies the format of the pixel data. Should mean one float for this
+        //             GL_FLOAT,          // Specifies the data type of the pixel data.
+        //             (void*)tmp.data()  // Specifies a pointer to the image data in memory.
+        //         );
+        // #endif
+        //         // specify minify/magnify interpolation method
+        //         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        //         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-//         glBindTexture(GL_TEXTURE_2D, 0);
+        //         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     void upload_child_links() {
@@ -539,11 +548,12 @@ struct VolumeRenderer::Impl {
     void shader_init() {
         program = create_shader_program(GUIDE_MESH_VERT_SHADER_SRC, RT_FRAG_SRC);
 
-        u.cam_transform = glGetUniformLocation(program, "cam.transform");
-        u.cam_focal = glGetUniformLocation(program, "cam.focal");
-        u.cam_reso = glGetUniformLocation(program, "cam.reso");
-        u.cam_K = glGetUniformLocation(program, "cam.K");
-        u.cam_w2c = glGetUniformLocation(program, "cam.w2c");
+        u.cam.c2w = glGetUniformLocation(program, "cam.c2w");
+        u.cam.w2c = glGetUniformLocation(program, "cam.w2c");
+        u.cam.focal = glGetUniformLocation(program, "cam.focal");
+        u.cam.reso = glGetUniformLocation(program, "cam.reso");
+        u.cam.K = glGetUniformLocation(program, "cam.K");
+        u.cam.inv_K = glGetUniformLocation(program, "cam.inv_K");
         // u.rigid = glGetUniformLocation(program, "rigid");
         // u.bigrigid = glGetUniformLocation(program, "bigrigid");
         // u.M = glGetUniformLocation(program, "M");
@@ -627,7 +637,7 @@ struct VolumeRenderer::Impl {
 
     std::string shader_fname = "shaders/rt.frag";
 
-    _RenderUniforms u;      // uniform value in the shader
+    RenderUniforms u;       // uniform value in the shader
     bool started_ = false;  // whether the program (globally) has been started, can render now
 };
 

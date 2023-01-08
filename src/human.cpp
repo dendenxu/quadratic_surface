@@ -97,7 +97,7 @@ const char* VERT_SHADER_SRC =
 
 uniform mat4 K;
 uniform mat4 MV;
-uniform mat4 M; // model transform
+uniform mat4 M; // model c2w
 uniform mat4 V; // this is currently useless due to MV
 uniform bool bigpose_geometry;
 
@@ -189,7 +189,7 @@ void main()
         if (bone_association) {
             frag_color = vec4(vert_color, 1);
         } else {
-            frag_color = vec4(shade_normal * 0.5 + vec3(0.5), 0.5); // transform [-1,1] to [0, 1]
+            frag_color = vec4(shade_normal * 0.5 + vec3(0.5), 0.5); // c2w [-1,1] to [0, 1]
         }
     } else {
         // FIXME make these uniforms, whatever for now
@@ -241,7 +241,7 @@ Human::Human(int n_verts, int n_faces)
     // for (int i = 0; i < rigid.size(); i++) {
     //     rigid[i] = glm::mat4(1.0f);
     // }
-    // transform = glm::mat4(1.0f);
+    // c2w = glm::mat4(1.0f);
 }
 
 void Human::update() {
@@ -277,10 +277,10 @@ void Human::use_shader() { glUseProgram(program); }
 
 void Human::draw(const glm::mat4x4& V, glm::mat4x4 K, const RenderOptions& options) const {
     glm::vec3 cam_pos = -glm::transpose(glm::mat3x3(V)) * glm::vec3(V[3]);
-    glm::mat4x4 MV = V * transform;
+    glm::mat4x4 MV = V * c2w;
     // clang-format off
     glUniformMatrix4fv(u.MV, 1, GL_FALSE, glm::value_ptr(MV));                         // o2c
-    glUniformMatrix4fv(u.M, 1, GL_FALSE, glm::value_ptr(transform));                   // o2w
+    glUniformMatrix4fv(u.M, 1, GL_FALSE, glm::value_ptr(c2w));                   // o2w
     glUniformMatrix4fv(u.V, 1, GL_FALSE, glm::value_ptr(V));                           // w2c
     glUniformMatrix4fv(u.K, 1, GL_FALSE, glm::value_ptr(K));                           // c2clip
     glUniformMatrix4fv(u.rigid, POSE_BONE_SZ, GL_FALSE, (GLfloat*)(&rigid[0]));        // rigid transformation
@@ -305,7 +305,7 @@ std::vector<glm::mat4> get_rigid_transform(const std::vector<glm::vec3>& tjoints
     // update size if is the first time
     auto rigid = std::vector<glm::mat4>(POSE_BONE_SZ);
 
-    // prepare the first transform
+    // prepare the first c2w
     rigid[0] = glm::mat4(1.0f);                 // eye
     rigid[0][3] = glm::vec4(tjoints[0], 1.0f);  // assign translation
 
@@ -376,12 +376,12 @@ void Human::update_transform(int index) {
         glm::vec3 t = all_ts[index];
         float norm = glm::length(r);
         if (norm < 1e-3) {
-            transform = glm::mat4(1.0);
+            c2w = glm::mat4(1.0);
         } else {
             glm::quat rot = glm::angleAxis(norm, r / norm);
-            transform = glm::mat4_cast(rot);
+            c2w = glm::mat4_cast(rot);
         }
-        transform[3] = glm::vec4(t, 1);
+        c2w[3] = glm::vec4(t, 1);
     }
 }
 

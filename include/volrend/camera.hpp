@@ -36,11 +36,12 @@ struct Camera {
     glm::vec3 v_up, v_right;
 
     // 4x3 C2W transform used for volume rendering, automatically updated
-    glm::mat4x3 transform;
+    glm::mat4x3 c2w;
     bool lock_trans = false;  // update from vector?
 
     // 4x4 projection matrix for triangle rendering
     glm::mat4x4 K;
+    glm::mat4x4 inv_K;
 
     // 4x4 W2C transform
     glm::mat4x4 w2c;

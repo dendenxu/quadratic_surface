@@ -159,7 +159,7 @@ void main()
     }
     if (unlit) {
         // FragColor = vec4(VertColor, 1);
-        FragColor = vec4(shadeNormal * 0.5 + vec3(0.5), 0.5); // transform [-1,1] to [0, 1]
+        FragColor = vec4(shadeNormal * 0.5 + vec3(0.5), 0.5); // c2w [-1,1] to [0, 1]
     } else {
         // FIXME make these uniforms, whatever for now
         float ambient = 0.3;
@@ -682,26 +682,26 @@ void Mesh::repeat(int n) {
 }
 
 void Mesh::apply_transform(glm::vec3 r, glm::vec3 t, int start, int end) {
-    glm::mat4 transform;
+    glm::mat4 c2w;
     float norm = glm::length(r);
     if (norm < 1e-3) {
-        transform = glm::mat4(1.0);
+        c2w = glm::mat4(1.0);
     } else {
         glm::quat rot = glm::angleAxis(norm, r / norm);
-        transform = glm::mat4_cast(rot);
+        c2w = glm::mat4_cast(rot);
     }
-    transform[3] = glm::vec4(t, 1);
-    apply_transform(transform, start, end);
+    c2w[3] = glm::vec4(t, 1);
+    apply_transform(c2w, start, end);
 }
 
-void Mesh::apply_transform(glm::mat4 transform, int start, int end) {
+void Mesh::apply_transform(glm::mat4 c2w, int start, int end) {
     if (end == -1) {
         end = vert.size() / VERT_SZ;
     }
     auto* ptr = &vert[start * VERT_SZ];
     for (int i = start; i < end; ++i) {
         glm::vec4 v(ptr[0], ptr[1], ptr[2], 1.0);
-        v = transform * v;
+        v = c2w * v;
         ptr[0] = v[0];
         ptr[1] = v[1];
         ptr[2] = v[2];

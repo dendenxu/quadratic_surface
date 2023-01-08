@@ -52,10 +52,10 @@ void Camera::_update(bool transform_from_vecs, bool copy_cuda) {
         if (dot < 0.0f) v_world_up_tmp = -v_world_up_tmp;
         v_right = glm::normalize(glm::cross(v_world_up_tmp, v_back));
         v_up = glm::cross(v_back, v_right);
-        transform[0] = v_right;
-        transform[1] = v_up;
-        transform[2] = v_back;
-        transform[3] = center;
+        c2w[0] = v_right;
+        c2w[1] = v_up;
+        c2w[2] = v_back;
+        c2w[3] = center;
     }
 
     const float k_fx = fx / (0.5f * width);
@@ -101,17 +101,19 @@ void Camera::_update(bool transform_from_vecs, bool copy_cuda) {
                     0,      0,     -1.f,          -1,
                     0,      0,     -2 * clip_near, 0);
     // clang-format on
-    w2c = glm::affineInverse(glm::mat4x4(transform));
+    w2c = glm::affineInverse(glm::mat4x4(c2w));
 
-#ifdef VOLREND_CUDA
-    if (copy_cuda) {
-        if (device.transform == nullptr) {
-            cuda(Malloc((void**)&device.transform, 12 * sizeof(transform[0])));
-        }
-        cuda(MemcpyAsync(device.transform, glm::value_ptr(transform),
-                         12 * sizeof(transform[0]), cudaMemcpyHostToDevice));
-    }
-#endif
+    inv_K = glm::inverse(K);
+
+// #ifdef VOLREND_CUDA
+//     if (copy_cuda) {
+//         if (device.transform == nullptr) {
+//             cuda(Malloc((void**)&device.transform, 12 * sizeof(transform[0])));
+//         }
+//         cuda(MemcpyAsync(device.transform, glm::value_ptr(transform),
+//                          12 * sizeof(transform[0]), cudaMemcpyHostToDevice));
+//     }
+// #endif
 }
 
 void Camera::begin_drag(float x, float y, bool is_panning, bool about_origin) {

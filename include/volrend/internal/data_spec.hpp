@@ -12,13 +12,13 @@ struct CameraSpec {
     const int width;
     const int height;
     const float fx, fy;
-    const float* VOLREND_RESTRICT transform;
+    const float* VOLREND_RESTRICT c2w;
     CameraSpec(const Camera& camera)
         : width(camera.width),
           height(camera.height),
           fx(camera.fx),
           fy(camera.fy),
-          transform(camera.device.transform) {}
+          c2w(camera.device.c2w) {}
 };
 struct TreeSpec {
     const __half* VOLREND_RESTRICT const data;
