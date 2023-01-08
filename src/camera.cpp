@@ -33,7 +33,7 @@ Camera::Camera(int width, int height, float fx, float fy)
     v_back = {-0.7071068f, 0.0f, 0.7071068f};
     v_world_up = {0.0f, 0.0f, 1.0f};
     origin = {0.0f, 0.0f, 0.0f};
-    _update();
+    update();
 }
 
 Camera::~Camera() {
@@ -44,7 +44,7 @@ Camera::~Camera() {
 #endif
 }
 
-void Camera::_update(bool transform_from_vecs, bool copy_cuda) {
+void Camera::update(bool transform_from_vecs, bool copy_cuda) {
     if (transform_from_vecs && !lock_trans) {
         v_back = glm::normalize(v_back);
         glm::vec3 v_world_up_tmp = v_world_up;
@@ -163,7 +163,7 @@ void Camera::drag_update(float x, float y) {
         if (drag_state_->about_origin) {
             center = glm::vec3(m * glm::vec4(drag_state_->drag_start_center - origin, 1.f)) + origin;
         }
-        _update(true, false);
+        update(true, false);
     }
 }
 bool Camera::is_dragging() const { return drag_state_->is_dragging; }

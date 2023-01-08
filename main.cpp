@@ -840,16 +840,16 @@ int main(int argc, char* argv[]) {
         ;
     // clang-format on
 
-    cxxoptions.positional_help("npz_file");
+    // cxxoptions.positional_help("npz_file");
 
     cxxopts::ParseResult args = internal::parse_options(cxxoptions, argc, argv);
 
-// #ifdef VOLREND_CUDA
-//     const int device_id = args["gpu"].as<int>();
-//     if (~device_id) {
-//         cuda(SetDevice(device_id));
-//     }
-// #endif
+    // #ifdef VOLREND_CUDA
+    //     const int device_id = args["gpu"].as<int>();
+    //     if (~device_id) {
+    //         cuda(SetDevice(device_id));
+    //     }
+    // #endif
 
     int width = args["width"].as<int>(), height = args["height"].as<int>();
     float fx = args["fx"].as<float>();
@@ -873,6 +873,7 @@ int main(int argc, char* argv[]) {
             rend.camera.v_world_up = glm::vec3(world_up[0], world_up[1], world_up[2]);
             auto back = args["back"].as<std::vector<float>>();
             rend.camera.v_back = glm::vec3(back[0], back[1], back[2]);
+            rend.camera.update();  // update transform matrix from these values
         }
         if (fy <= 0.f) {
             rend.camera.fy = rend.camera.fx;

@@ -40,6 +40,7 @@ struct Camera {
     mat4x4 inv_K;
     vec2 reso;
     vec2 focal;
+    vec3 center;
 };
 
 
@@ -134,10 +135,11 @@ struct RenderUniforms {
     struct {
         GLint c2w;
         GLint w2c;
-        GLint focal;
-        GLint reso;
         GLint K;
         GLint inv_K;
+        GLint focal;
+        GLint reso;
+        GLint center;
     } cam;
     // GLint opt_step_size, opt_backgrond_brightness, opt_stop_thresh,
     //     opt_sigma_thresh, opt_render_bbox, opt_basis_minmax, opt_rot_dirs, opt_t_off_in, opt_t_off_out, opt_use_offset, opt_visualize_offset, opt_visualize_unseen, opt_visualize_intensity, opt_vis_offset_multiplier, opt_vis_color_multiplier, opt_vis_color_offset,
@@ -145,13 +147,13 @@ struct RenderUniforms {
     //     opt_probe,
     //     opt_probe_disp_size,
     //     opt_show_template;
-    GLint tree_data_tex, tree_child_tex;
-    GLint mesh_depth_tex, mesh_color_tex;
-    GLint rigid;             // LBS
-    GLint bigrigid;          // LBS
-    GLint M;                 // Model transform
-    GLint drawing_probe;     // to avoid loading texture once again
-    GLint bigpose_geometry;  // to avoid loading texture once again
+    // GLint tree_data_tex, tree_child_tex;
+    // GLint mesh_depth_tex, mesh_color_tex;
+    // GLint rigid;             // LBS
+    // GLint bigrigid;          // LBS
+    // GLint M;                 // Model transform
+    // GLint drawing_probe;     // to avoid loading texture once again
+    // GLint bigpose_geometry;  // to avoid loading texture once again
 };
 
 }  // namespace
@@ -181,15 +183,15 @@ struct VolumeRenderer::Impl {
 
     ~Impl() {
         glDeleteProgram(program);
-        glDeleteFramebuffers(1, &fb);
-        glDeleteTextures(1, &tex_tree_data);
-        glDeleteTextures(1, &tex_tree_child);
-        glDeleteTextures(1, &tex_tree_extra);
-        glDeleteTextures(1, &tex_mesh_color);
-        glDeleteTextures(1, &tex_mesh_depth);
+        // glDeleteFramebuffers(1, &fb);
+        // glDeleteTextures(1, &tex_tree_data);
+        // glDeleteTextures(1, &tex_tree_child);
+        // glDeleteTextures(1, &tex_tree_extra);
+        // glDeleteTextures(1, &tex_mesh_color);
+        // glDeleteTextures(1, &tex_mesh_depth);
 
-        // TODO: use a render buffer
-        glDeleteTextures(1, &tex_mesh_depth_buf);
+        // // TODO: use a render buffer
+        // glDeleteTextures(1, &tex_mesh_depth_buf);
     }
 
     void start() {
@@ -268,7 +270,7 @@ struct VolumeRenderer::Impl {
         // probe_.visible = options.enable_probe;
         // for (int i = 0; i < 3; ++i) probe_.translation[i] = options.probe[i];
 
-        camera._update();
+        camera.update();
         // if (options.show_grid) {
         //     maybe_gen_wire(options.grid_max_depth);
         // }
@@ -320,9 +322,10 @@ struct VolumeRenderer::Impl {
 
         // FIXME reduce uniform transfers?
         glUniformMatrix4x3fv(u.cam.c2w, 1, GL_FALSE, glm::value_ptr(camera.c2w));
-        glUniformMatrix4fv(u.cam.w2c, 1, GL_FALSE, glm::value_ptr(camera.w2c));      // loading camera w2c to GPU
-        glUniformMatrix4fv(u.cam.K, 1, GL_FALSE, glm::value_ptr(camera.K));          // loading camera K
-        glUniformMatrix4fv(u.cam.inv_K, 1, GL_FALSE, glm::value_ptr(camera.inv_K));  // loading camera inv_K
+        glUniformMatrix4fv(u.cam.w2c, 1, GL_FALSE, glm::value_ptr(camera.w2c));        // loading camera w2c to GPU
+        glUniformMatrix4fv(u.cam.K, 1, GL_FALSE, glm::value_ptr(camera.K));            // loading camera K
+        glUniformMatrix4fv(u.cam.inv_K, 1, GL_FALSE, glm::value_ptr(camera.inv_K));    // loading camera inv_K
+        glUniformMatrix4fv(u.cam.center, 1, GL_FALSE, glm::value_ptr(camera.center));  // loading camera inv_K
         // glUniformMatrix4fv(u.rigid, POSE_BONE_SZ, GL_FALSE, (GLfloat*)(&human->rigid[0]));              // rigid transformation for linear blend skinning
         // glUniformMatrix4fv(u.bigrigid, POSE_BONE_SZ, GL_FALSE, (GLfloat*)(&human->get_bigrigid()[0]));  // rigid transformation for linear blend skinning
         // glUniformMatrix4fv(u.M, 1, GL_FALSE, glm::value_ptr(human->transform));                         // rigid transformation for linear blend skinning
@@ -550,10 +553,11 @@ struct VolumeRenderer::Impl {
 
         u.cam.c2w = glGetUniformLocation(program, "cam.c2w");
         u.cam.w2c = glGetUniformLocation(program, "cam.w2c");
-        u.cam.focal = glGetUniformLocation(program, "cam.focal");
-        u.cam.reso = glGetUniformLocation(program, "cam.reso");
         u.cam.K = glGetUniformLocation(program, "cam.K");
         u.cam.inv_K = glGetUniformLocation(program, "cam.inv_K");
+        u.cam.center = glGetUniformLocation(program, "cam.center");
+        u.cam.focal = glGetUniformLocation(program, "cam.focal");
+        u.cam.reso = glGetUniformLocation(program, "cam.reso");
         // u.rigid = glGetUniformLocation(program, "rigid");
         // u.bigrigid = glGetUniformLocation(program, "bigrigid");
         // u.M = glGetUniformLocation(program, "M");

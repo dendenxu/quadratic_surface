@@ -27,6 +27,7 @@ struct Camera {
     mat4x4 inv_K;
     vec2 reso;
     vec2 focal;
+    vec3 center;
 };
 
 // // Store tree data
@@ -253,28 +254,33 @@ void main() {
     // https://computergraphics.stackexchange.com/questions/5724/glsl-can-someone-explain-why-gl-fragcoord-xy-screensize-is-performed-and-for
 
     // screen coordinate ray origin
-    float aspect_ratio = cam.reso.x / cam.reso.y;
-    vec3 ray_position = vec3(0.0, 0.0, -10.0);
+    // float aspect_ratio = cam.reso.x / cam.reso.y;
+    // vec3 ray_position = vec3(0.0, 0.0, -10.0);
     // screen coordiante ray target
-    vec3 ray_target = vec3((gl_FragCoord.xy / cam.reso.xy) * 2.0 - 1.0, 1.0);
-    ray_target.y /= aspect_ratio;
+    // vec3 ray_target = vec3((gl_FragCoord.xy / cam.reso.xy) * 2.0 - 1.0, 1.0);
+    // ray_target.y /= aspect_ratio;
 
-    vec2 ray_step = (1.0 / cam.reso.xy) / float(samples);
+    // vec2 ray_step = (1.0 / cam.reso.xy) / float(samples);
     // mat4 rot_matrix = mat4(cam.w2c);
-    mat4 rot_matrix = mat4(1.0);
+    // mat4 rot_matrix = mat4(1.0);
+
+    vec2 pix_scr = gl_FragCoord.xy;              // screen space pixel
+    vec2 pix_step = vec2(1.0 / float(samples));  // super sampling substeps
+
     vec3 result = vec3(0.0);
 
     for (int y = 0; y < samples; y++) {
         for (int x = 0; x < samples; x++) {
-            vec3 ray_dir = normalize(ray_target + vec3(ray_step * vec2(x, y), 0.0) - ray_position);
-            vec4 new_dir = rot_matrix * vec4(ray_dir, 0.0);
+            vec3 pix_cam = vec3(cam.inv_K * vec4(pix_scr + pix_step * vec2(x, y), 1.0, 1.0));  // camera space pixel
+            vec3 pix_world = vec3(cam.c2w * vec4(pix_cam, 1.0));                               // world space pixel
+            vec3 ray_dir = normalize(pix_world - cam.center);                                  // ray direction
 
             // quadrics
             vec3 pixel = vec3(0.0);
 
             // pixel += draw_quadric(cylinder, vec4(ray_position - vec3(-3.0, 1.0, 30.0), 1.0) * rot_matrix, new_dir);
             // pixel += draw_quadric(sphere, vec4(ray_position - vec3(-1.5, 1.0, 30.0), 1.0) * rot_matrix, new_dir);
-            pixel += draw_quadric(ellipticParaboloid, rot_matrix * vec4(ray_position, 1.0), new_dir);
+            pixel += draw_quadric(ellipticParaboloid, vec4(cam.center, 1.0), vec4(ray_dir, 0.0));
             // pixel += draw_quadric(hyperbolicParaboloid, vec4(ray_position - vec3(1.5, 1.0, 30.0), 1.0) * rot_matrix, new_dir);
             // pixel += draw_quadric(circularCone, vec4(ray_position - vec3(3.0, 1.0, 30.0), 1.0) * rot_matrix, new_dir);
             // pixel += draw_quadric(quadraticPlane, vec4(ray_position - vec3(-2.0, -1.0, 30.0), 1.0) * rot_matrix, new_dir);
