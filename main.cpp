@@ -221,8 +221,8 @@ void draw_imgui(VolumeRenderer& rend
             ImGui::Text("Polygonization might take a while...");
             ImGui::Text("See console for progress update...");
             if (quadric.mesh != nullptr) {
-                ImGui::Text("Vertices: %d", quadric.mesh->verts.size());
-                ImGui::Text("Triangles: %d", quadric.mesh->faces.size() / 3);
+                ImGui::Text("Vertices: %d", quadric.mesh->n_verts());
+                ImGui::Text("Triangles: %d", quadric.mesh->n_faces());
                 ImGui::Checkbox("Render Mesh", &quadric.render_mesh);
             }
             ImGui::TreePop();

@@ -96,6 +96,17 @@ struct VolumeRenderer::Impl {
         if (!started) return;
         camera.update();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        if (quadric.mesh != nullptr && quadric.render_mesh) {
+            // Polygonization
+            quadric.mesh->draw(camera.w2c, camera.K);
+        } else {
+            // Ray-casting (default)
+            draw();
+        }
+    }
+
+    void draw() {
         glUseProgram(program);  // using tree shader
 
         glUniformMatrix4x3fv(u.cam.c2w, 1, GL_FALSE, glm::value_ptr(camera.c2w));

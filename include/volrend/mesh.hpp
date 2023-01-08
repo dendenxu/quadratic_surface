@@ -5,7 +5,10 @@
 
 #include "glm/mat4x4.hpp"
 
+void estimate_normals(std::vector<float>& verts, const std::vector<unsigned int>& faces);
+
 namespace volrend {
+const int VERT_SZ = 9;
 
 struct Mesh {
     explicit Mesh(int n_verts = 0, int n_faces = 0, int face_size = 3,
@@ -13,9 +16,6 @@ struct Mesh {
 
     // Upload to GPU
     void update();
-
-    // Use mesh shader program (for shader render purposes only)
-    static void use_shader();
 
     // Draw the mesh
     void draw(const glm::mat4x4& V, glm::mat4x4 K) const;
@@ -36,16 +36,19 @@ struct Mesh {
     // Triangle indices
     std::vector<unsigned int> faces;
 
+    size_t n_verts() { return verts.size() / VERT_SZ; }
+    size_t n_faces() { return faces.size() / face_size; }
+
     // Model c2w, rotation is axis-angle
-    glm::vec3 rotation, translation;
+    glm::vec3 rotation{1.0}, translation{0.0};
     float scale = 1.f;
 
     // Computed c2w
     mutable glm::mat4 transform_;
 
-    int face_size;
+    int face_size = 3;
     bool visible = true;
-    bool unlit = false;
+    bool unlit = true;
 
     std::string name = "Mesh";
 

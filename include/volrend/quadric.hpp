@@ -54,7 +54,7 @@ struct Quadric {
         return A * x * x + 2 * B * x * y + 2 * C * x * z + 2 * D * x + E * y * y + 2 * F * y * z + G * y + H * z * z + I * z + J;
     }
 
-    bool render_mesh = false;    // if render_mesh and loaded, render the triangle mesh instead
+    bool render_mesh = true;     // if render_mesh and loaded, render the triangle mesh instead
     std::unique_ptr<Mesh> mesh;  // once loaded, render this
 
     void marching_cubes() {
@@ -76,8 +76,15 @@ struct Quadric {
             0.0,
             verts,
             faces);
-        mesh->verts = std::vector<float>(verts.begin(), verts.end());
         mesh->faces = std::vector<unsigned int>(faces.begin(), faces.end());
+        mesh->verts.resize(verts.size() / 3 * VERT_SZ);
+        for (int i = 0; i < verts.size() / 3; i++) {
+            mesh->verts[i * VERT_SZ + 0] = verts[i * 3 + 0] / resolution - box_size;
+            mesh->verts[i * VERT_SZ + 1] = verts[i * 3 + 1] / resolution - box_size;
+            mesh->verts[i * VERT_SZ + 2] = verts[i * 3 + 2] / resolution - box_size;
+        }
+        estimate_normals(mesh->verts, mesh->faces);
+        mesh->update();
     }
 };
 

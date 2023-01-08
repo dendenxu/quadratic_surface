@@ -191,7 +191,7 @@ void marching_cubes(const vector3& lower, const vector3& upper,
         progress.update(n_marched);
     }
     // );
-    tlog::success() << "Marching Cubes finished, n_vertices = " << vertices.size() << ", n_polygons = " << polygons.size() << "";
+    tlog::success() << "Marching Cubes finished, n_vertices = " << vertices.size() / 3 << ", n_polygons = " << polygons.size() / 3 << "";
 }
 
 }  // namespace mc

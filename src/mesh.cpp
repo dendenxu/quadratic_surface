@@ -23,9 +23,6 @@
 #include "half.hpp"
 #include "volrend/internal/shader.hpp"
 
-namespace {
-const int VERT_SZ = 9;
-
 GLenum get_gl_ele_type(int face_size) {
     switch (face_size) {
     case 1:
@@ -64,20 +61,20 @@ void _normalize(scalar_t* dir) {
 void estimate_normals(std::vector<float>& verts,
                       const std::vector<unsigned int>& faces) {
     const int n_faces =
-        faces.size() ? faces.size() / 3 : verts.size() / VERT_SZ / 3;
+        faces.size() ? faces.size() / 3 : verts.size() / volrend::VERT_SZ / 3;
     float a[3], b[3], cross[3], off[3];
-    for (int i = 0; i < verts.size() / VERT_SZ; ++i) {
-        for (int j = 0; j < 3; ++j) verts[i * VERT_SZ + 6 + j] = 0.f;
+    for (int i = 0; i < verts.size() / volrend::VERT_SZ; ++i) {
+        for (int j = 0; j < 3; ++j) verts[i * volrend::VERT_SZ + 6 + j] = 0.f;
     }
     for (int i = 0; i < n_faces; ++i) {
         if (faces.size()) {
-            off[0] = faces[3 * i] * VERT_SZ;
-            off[1] = faces[3 * i + 1] * VERT_SZ;
-            off[2] = faces[3 * i + 2] * VERT_SZ;
+            off[0] = faces[3 * i] * volrend::VERT_SZ;
+            off[1] = faces[3 * i + 1] * volrend::VERT_SZ;
+            off[2] = faces[3 * i + 2] * volrend::VERT_SZ;
         } else {
-            off[0] = i * VERT_SZ * 3;
-            off[1] = off[0] + VERT_SZ;
-            off[2] = off[1] + VERT_SZ;
+            off[0] = i * volrend::VERT_SZ * 3;
+            off[1] = off[0] + volrend::VERT_SZ;
+            off[2] = off[1] + volrend::VERT_SZ;
         }
 
         for (int j = 0; j < 3; ++j) {
@@ -92,8 +89,8 @@ void estimate_normals(std::vector<float>& verts,
             }
         }
     }
-    for (int i = 0; i < verts.size() / VERT_SZ; ++i) {
-        _normalize(&verts[i * VERT_SZ + 6]);
+    for (int i = 0; i < verts.size() / volrend::VERT_SZ; ++i) {
+        _normalize(&verts[i * volrend::VERT_SZ + 6]);
     }
 }
 
@@ -157,6 +154,7 @@ void main()
     } else {
         shadeNormal = Normal;
     }
+
     if (unlit) {
         // FragColor = vec4(VertColor, 1);
         FragColor = vec4(shadeNormal * 0.5 + vec3(0.5), 0.5); // c2w [-1,1] to [0, 1]
@@ -346,7 +344,6 @@ std::vector<int> map_get_intarr(const std::map<std::string, cnpy::NpyArray>& m,
 #undef _ASSN_PTR_ARR
     return result;
 }
-}  // namespace
 
 namespace volrend {
 
@@ -394,9 +391,8 @@ void Mesh::update() {
     glBindVertexArray(0);
 }
 
-void Mesh::use_shader() { glUseProgram(program); }
-
 void Mesh::draw(const glm::mat4x4& V, glm::mat4x4 K) const {
+    glUseProgram(program);
     if (!visible) return;
     float norm = glm::length(rotation);
     if (norm < 1e-3) {
