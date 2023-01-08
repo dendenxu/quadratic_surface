@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "volrend/marching_cubes.hpp"
 #include "volrend/mesh.hpp"
 
 namespace volrend {
@@ -38,6 +39,7 @@ struct Quadric {
     float eps = 0.000001f;
     float box_size = 0.5f;
     int samples = 4;
+    int resolution = 512;  // marching cubes resolution
 
     glm::mat4 Q() const {
         return glm::mat4(
@@ -47,7 +49,36 @@ struct Quadric {
             D, G, I, J);
     }
 
-    std::vector<Mesh> meshes;
+    float evaluate(float x, float y, float z) const {
+        // evaluate the quadratic function at the given point
+        return A * x * x + 2 * B * x * y + 2 * C * x * z + 2 * D * x + E * y * y + 2 * F * y * z + G * y + H * z * z + I * z + J;
+    }
+
+    bool render_mesh = false;    // if render_mesh and loaded, render the triangle mesh instead
+    std::unique_ptr<Mesh> mesh;  // once loaded, render this
+
+    void marching_cubes() {
+        // perform marching cubes on the quadratic surface
+        mesh = std::make_unique<Mesh>();
+        mesh->name = "Quadric Mesh";
+
+        std::vector<double> verts;  // marching cubes requires double input
+        std::vector<size_t> faces;  // marching cubes requires organized input
+        std::vector<double> lower = {-box_size, -box_size, -box_size};
+        std::vector<double> upper = {box_size, box_size, box_size};
+        mc::marching_cubes(
+            lower,
+            upper,
+            resolution, resolution, resolution,
+            [this](float x, float y, float z) {
+                return evaluate(x, y, z);
+            },
+            0.0,
+            verts,
+            faces);
+        mesh->verts = std::vector<float>(verts.begin(), verts.end());
+        mesh->faces = std::vector<unsigned int>(faces.begin(), faces.end());
+    }
 };
 
 }  // namespace volrend

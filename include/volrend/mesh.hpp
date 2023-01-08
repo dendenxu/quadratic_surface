@@ -32,7 +32,7 @@ struct Mesh {
     void apply_transform(glm::mat4 c2w, int start = 0, int end = -1);
 
     // Vertex positions
-    std::vector<float> vert;
+    std::vector<float> verts;
     // Triangle indices
     std::vector<unsigned int> faces;
 

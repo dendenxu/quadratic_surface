@@ -351,7 +351,7 @@ std::vector<int> map_get_intarr(const std::map<std::string, cnpy::NpyArray>& m,
 namespace volrend {
 
 Mesh::Mesh(int n_verts, int n_faces, int face_size, bool unlit)
-    : vert(n_verts * 9),
+    : verts(n_verts * 9),
       faces(n_faces * face_size),
       rotation(0),
       translation(0),
@@ -376,7 +376,7 @@ void Mesh::update() {
 
     glBindVertexArray(vao_);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-    glBufferData(GL_ARRAY_BUFFER, vert.size() * sizeof(vert[0]), vert.data(),
+    glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(verts[0]), verts.data(),
                  GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, VERT_SZ * sizeof(float),
                           (void*)0);
@@ -419,7 +419,7 @@ void Mesh::draw(const glm::mat4x4& V, glm::mat4x4 K) const {
 
     glBindVertexArray(vao_);
     if (faces.empty()) {
-        glDrawArrays(get_gl_ele_type(face_size), 0, vert.size() / VERT_SZ);
+        glDrawArrays(get_gl_ele_type(face_size), 0, verts.size() / VERT_SZ);
     } else {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
         glDrawElements(get_gl_ele_type(face_size), faces.size(),
@@ -431,7 +431,7 @@ void Mesh::draw(const glm::mat4x4& V, glm::mat4x4 K) const {
 Mesh Mesh::Cube(glm::vec3 color) {
     Mesh m(36, 0, 3);
     // clang-format off
-    m.vert = {
+    m.verts = {
         -0.5, -0.5, -0.5,  color.x, color.y, color.z,  0.0f, 0.0f, -1.0f,
          0.5, 0.5, -0.5,   color.x, color.y, color.z,  0.0f, 0.0f, -1.0f,
          0.5, -0.5, -0.5,  color.x, color.y, color.z,  0.0f, 0.0f, -1.0f,
@@ -484,7 +484,7 @@ Mesh Mesh::Sphere(int rings, int sectors, glm::vec3 color) {
     Mesh m(rings * sectors, (rings - 1) * sectors * 2, 3);
     const float R = M_PI / (float)(rings - 1);
     const float S = 2 * M_PI / (float)sectors;
-    float* vptr = m.vert.data();
+    float* vptr = m.verts.data();
     for (int r = 0; r < rings; r++) {
         for (int s = 0; s < sectors; s++) {
             const float z = sin(-0.5f * M_PI + r * R);
@@ -524,7 +524,7 @@ Mesh Mesh::Sphere(int rings, int sectors, glm::vec3 color) {
 
 Mesh Mesh::Lattice(int reso, glm::vec3 color) {
     Mesh m(reso * reso * reso, 0, 1);
-    float* vptr = m.vert.data();
+    float* vptr = m.verts.data();
     for (int i = 0; i < reso; i++) {
         const float x = (i + 0.5f) / reso;
         for (int j = 0; j < reso; j++) {
@@ -557,7 +557,7 @@ Mesh Mesh::CameraFrustum(float focal_length, float image_width,
     float halfw = image_width * 0.5f, halfh = image_height * 0.5f;
     Mesh m(5, 8, 2);
     // clang-format off
-    m.vert = {
+    m.verts = {
         0.f, 0.f, 0.f, color[0], color[1], color[2],
             0.f, 0.f, 1.f,
         z * -halfw * invf, z * -halfh * invf, z, color[0], color[1], color[2],
@@ -588,7 +588,7 @@ Mesh Mesh::CameraFrustum(float focal_length, float image_width,
 Mesh Mesh::Line(glm::vec3 a, glm::vec3 b, glm::vec3 color) {
     volrend::Mesh m(2, 1, 2);
     // clang-format off
-    m.vert = {
+    m.verts = {
         a[0], a[1], a[2], color[0], color[1], color[2], 0.f, 0.f, 1.f,
         b[0], b[1], b[2], color[0], color[1], color[2], 0.f, 0.f, 1.f,
     };
@@ -605,7 +605,7 @@ Mesh Mesh::Lines(std::vector<float> points, glm::vec3 color) {
     }
     const int n_points = (int)points.size() / 3;
     volrend::Mesh m(n_points, n_points - 1, 2);
-    float* vptr = m.vert.data();
+    float* vptr = m.verts.data();
     float* pptr = points.data();
     for (int i = 0; i < n_points; ++i) {
         vptr[0] = pptr[0];
@@ -637,7 +637,7 @@ Mesh Mesh::Points(std::vector<float> points, glm::vec3 color) {
     }
     const int n_points = (int)points.size() / 3;
     volrend::Mesh m(n_points, 0, 1);
-    float* vptr = m.vert.data();
+    float* vptr = m.verts.data();
     float* pptr = points.data();
     for (int i = 0; i < n_points; ++i) {
         vptr[0] = pptr[0];
@@ -658,20 +658,20 @@ Mesh Mesh::Points(std::vector<float> points, glm::vec3 color) {
 }
 
 void Mesh::auto_faces() {
-    faces.resize(vert.size() / VERT_SZ);
+    faces.resize(verts.size() / VERT_SZ);
     std::iota(faces.begin(), faces.end(), 0);
 }
 
 void Mesh::repeat(int n) {
     if (n < 1) return;
-    const size_t vert_size = vert.size();
+    const size_t vert_size = verts.size();
     const size_t n_verts = vert_size / VERT_SZ;
     const size_t faces_size = faces.size();
-    vert.resize(vert.size() * n);
+    verts.resize(verts.size() * n);
     faces.resize(faces.size() * n);
     for (int i = 1; i < n; ++i) {
-        std::copy(vert.begin(), vert.begin() + vert_size,
-                  vert.begin() + i * vert_size);
+        std::copy(verts.begin(), verts.begin() + vert_size,
+                  verts.begin() + i * vert_size);
         std::copy(faces.begin(), faces.begin() + faces_size,
                   faces.begin() + i * faces_size);
         auto* fptr = &faces[i * faces_size];
@@ -696,9 +696,9 @@ void Mesh::apply_transform(glm::vec3 r, glm::vec3 t, int start, int end) {
 
 void Mesh::apply_transform(glm::mat4 c2w, int start, int end) {
     if (end == -1) {
-        end = vert.size() / VERT_SZ;
+        end = verts.size() / VERT_SZ;
     }
-    auto* ptr = &vert[start * VERT_SZ];
+    auto* ptr = &verts[start * VERT_SZ];
     for (int i = start; i < end; ++i) {
         glm::vec4 v(ptr[0], ptr[1], ptr[2], 1.0);
         v = c2w * v;
@@ -739,9 +739,9 @@ Mesh _load_basic_obj(const std::string& path_or_string, bool from_string) {
     auto& shapes = reader.GetShapes();
 
     const size_t n_verts = attrib.vertices.size() / 3;
-    mesh.vert.resize(VERT_SZ * n_verts);
+    mesh.verts.resize(VERT_SZ * n_verts);
     for (size_t i = 0; i < n_verts; i++) {
-        auto* ptr = &mesh.vert[i * VERT_SZ];
+        auto* ptr = &mesh.verts[i * VERT_SZ];
         for (int j = 0; j < 3; ++j) {
             ptr[j] = attrib.vertices[i * 3 + j];
         }
@@ -764,7 +764,7 @@ Mesh _load_basic_obj(const std::string& path_or_string, bool from_string) {
 
     if (attrib.colors.size() / 3 >= n_verts) {
         for (int i = 0; i < n_verts; ++i) {
-            auto* color_ptr = &mesh.vert[i * VERT_SZ + 3];
+            auto* color_ptr = &mesh.verts[i * VERT_SZ + 3];
             for (int j = 0; j < 3; ++j) {
                 color_ptr[j] = attrib.colors[3 * i + j];
             }
@@ -772,13 +772,13 @@ Mesh _load_basic_obj(const std::string& path_or_string, bool from_string) {
     }
     if (attrib.normals.size() / 3 >= n_verts) {
         for (size_t i = 0; i < n_verts; i++) {
-            auto* normal_ptr = &mesh.vert[i * VERT_SZ + 6];
+            auto* normal_ptr = &mesh.verts[i * VERT_SZ + 6];
             for (int j = 0; j < 3; ++j) {
                 normal_ptr[j] = attrib.normals[i * 3 + j];
             }
         }
     } else {
-        estimate_normals(mesh.vert, mesh.faces);
+        estimate_normals(mesh.verts, mesh.faces);
     }
 
     mesh.face_size = 3;
@@ -871,7 +871,7 @@ std::vector<Mesh> _load_npz(const cnpy::npz_t& npz, bool default_visible) {
                             "not "
                             "multiple of 3\n";
                 }
-                const size_t n_verts = me.vert.size() / VERT_SZ;
+                const size_t n_verts = me.verts.size() / VERT_SZ;
                 const size_t n_reps = t.size() / 3;
                 me.repeat(n_reps);
                 for (int i = 0; i < n_reps; ++i) {
@@ -928,7 +928,7 @@ std::vector<Mesh> _load_npz(const cnpy::npz_t& npz, bool default_visible) {
                 std::copy(faces.begin(), faces.end(), me.faces.begin());
             }
             if (me.face_size == 3) {
-                estimate_normals(me.vert, me.faces);
+                estimate_normals(me.verts, me.faces);
             }
         } else {
             errs << "Mesh '" << mesh_name << "' has unsupported type '"
@@ -938,13 +938,13 @@ std::vector<Mesh> _load_npz(const cnpy::npz_t& npz, bool default_visible) {
         if (fields.count("vert_color")) {
             // Support manual vertex colors
             auto vert_color = map_get_floatarr(fields, "vert_color", errs);
-            if (vert_color.size() * VERT_SZ != me.vert.size() * 3) {
+            if (vert_color.size() * VERT_SZ != me.verts.size() * 3) {
                 errs << "Mesh " << mesh_name
                      << " vert_color has invalid size\n";
                 continue;
             }
             const float* in_ptr = vert_color.data();
-            float* out_ptr = me.vert.data() + 3;
+            float* out_ptr = me.verts.data() + 3;
             for (int i = 0; i < vert_color.size(); i += 3) {
                 for (int j = 0; j < 3; ++j) {
                     out_ptr[j] = in_ptr[j];

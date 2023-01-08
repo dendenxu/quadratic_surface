@@ -24,7 +24,7 @@ struct VolumeRenderer {
     // Camera instance
     Camera camera;
 
-    // Quadric instance
+    // Quadric instance, maybe with marching cubed mesh
     Quadric quadric;
 
    private:

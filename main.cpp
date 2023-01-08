@@ -91,7 +91,7 @@ void draw_imgui(VolumeRenderer& rend
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGui::SetNextWindowPos(ImVec2(20.f, 20.f), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(400.f, 800.f), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(400.f, 900.f), ImGuiCond_Once);
 
     static char title[128] = {0};
     if (title[0] == 0) {
@@ -210,6 +210,21 @@ void draw_imgui(VolumeRenderer& rend
             if (ImGui::SliderFloat("1 / epsilon", &inv_eps, 0.0f, 10000000.f)) {
                 quadric.eps = 1 / inv_eps;
             };
+            ImGui::TreePop();
+        }
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+        if (ImGui::TreeNode("Polygonization")) {
+            ImGui::SliderInt("resolution", &quadric.resolution, 128, 1024);  // super sampling ratio
+            if (ImGui::Button("Polygonize")) {
+                quadric.marching_cubes();
+            }
+            ImGui::Text("Polygonization might take a while...");
+            ImGui::Text("See console for progress update...");
+            if (quadric.mesh != nullptr) {
+                ImGui::Text("Vertices: %d", quadric.mesh->verts.size());
+                ImGui::Text("Triangles: %d", quadric.mesh->faces.size() / 3);
+                ImGui::Checkbox("Render Mesh", &quadric.render_mesh);
+            }
             ImGui::TreePop();
         }
     }
