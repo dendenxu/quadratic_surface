@@ -13,7 +13,7 @@ namespace volrend {
 static const float CAMERA_DEFAULT_FOCAL_LENGTH = 1111.11f;
 
 struct Camera {
-    Camera(int width = 256, int height = 256,
+    Camera(int width = 960, int height = 540,
            float fx = CAMERA_DEFAULT_FOCAL_LENGTH, float fy = -1.f);
     ~Camera();
 

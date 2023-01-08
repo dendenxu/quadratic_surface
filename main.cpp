@@ -82,7 +82,10 @@ bool play_animation = false;
 float fps = 60.0;
 int selected_pose = 0;
 
-void draw_imgui(VolumeRenderer& rend, N3Tree& tree, Human& human) {
+void draw_imgui(VolumeRenderer& rend
+                // N3Tree& tree,
+                // Human& human
+) {
     auto& cam = rend.camera;
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -118,7 +121,6 @@ void draw_imgui(VolumeRenderer& rend, N3Tree& tree, Human& human) {
 
     // Begin window
     ImGui::Begin(title);
-#ifndef __EMSCRIPTEN__
     static ImGui::FileBrowser open_npz_guide_dialog(
         ImGuiFileBrowserFlags_MultipleSelection);
     if (open_npz_guide_dialog.GetTitle().empty()) {
@@ -155,28 +157,28 @@ void draw_imgui(VolumeRenderer& rend, N3Tree& tree, Human& human) {
     if (ImGui::Button("Load Guide Mesh")) {
         open_npz_guide_dialog.Open();
     }
-    if (human.verts.size()) {
-        ImGui::SameLine();
-        if (ImGui::Button("Load Human Poses")) {
-            open_npz_poses_dialog.Open();
-        }
-    }
+    // if (human.verts.size()) {
+    //     ImGui::SameLine();
+    //     if (ImGui::Button("Load Human Poses")) {
+    //         open_npz_poses_dialog.Open();
+    //     }
+    // }
     if (ImGui::Button("Save Screenshot")) {
         save_screenshot_dialog.Open();
     }
 
-    open_tree_dialog.Display();
-    if (open_tree_dialog.HasSelected()) {
-        // Load octree
-        std::string path = open_tree_dialog.GetSelected().string();
-        printf("Load N3Tree npz: %s\n", path.c_str());
-        tree.open(path);
-        rend.set(tree);
-        if (human.verts.size()) {
-            rend.options.render_guide_mesh = false;  // clear the guide mesh
-        }
-        open_tree_dialog.ClearSelected();
-    }
+    // open_tree_dialog.Display();
+    // if (open_tree_dialog.HasSelected()) {
+    //     // Load octree
+    //     std::string path = open_tree_dialog.GetSelected().string();
+    //     printf("Load N3Tree npz: %s\n", path.c_str());
+    //     tree.open(path);
+    //     rend.set(tree);
+    //     if (human.verts.size()) {
+    //         rend.options.render_guide_mesh = false;  // clear the guide mesh
+    //     }
+    //     open_tree_dialog.ClearSelected();
+    // }
 
     save_screenshot_dialog.Display();
     if (save_screenshot_dialog.HasSelected()) {
@@ -204,7 +206,6 @@ void draw_imgui(VolumeRenderer& rend, N3Tree& tree, Human& human) {
             printf("Failed to save screenshot\n");
         }
     }
-#endif
 
     ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
     if (ImGui::CollapsingHeader("Camera")) {
@@ -260,78 +261,78 @@ void draw_imgui(VolumeRenderer& rend, N3Tree& tree, Human& human) {
         }
     }  // End camera node
 
-    ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-    if (ImGui::CollapsingHeader("Render")) {
-        static float inv_step_size = 1.0f / rend.options.step_size;
-        if (ImGui::SliderFloat("1/overshoot", &inv_step_size, 128.f, 20000.f)) {
-            rend.options.step_size = 1.f / inv_step_size;
-        }
-        ImGui::SliderFloat("sigma_thresh", &rend.options.sigma_thresh, 0.f, 100.0f);
-        ImGui::SliderFloat("stop_thresh", &rend.options.stop_thresh, 0.001f, 0.4f);
-        ImGui::SliderFloat("bg_brightness", &rend.options.background_brightness, 0.f, 1.0f);
-        if (!rend.options.show_template) {
-            ImGui::SliderFloat("t_off_in", &rend.options.t_off_in, -1.0f, 3.0f);
-            ImGui::SliderFloat("t_off_out", &rend.options.t_off_out, -1.0f, 3.0f);
-        }
-        if ((human.n_poses()) && !rend.options.show_template) {
-            if (ImGui::SliderInt("pose", &selected_pose, 0, GLsizei(human.n_poses() - 1))) {
-                human.select_pose(selected_pose);
-            }
-        }
+    // ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+    // if (ImGui::CollapsingHeader("Render")) {
+    //     static float inv_step_size = 1.0f / rend.options.step_size;
+    //     if (ImGui::SliderFloat("1/overshoot", &inv_step_size, 128.f, 20000.f)) {
+    //         rend.options.step_size = 1.f / inv_step_size;
+    //     }
+    //     ImGui::SliderFloat("sigma_thresh", &rend.options.sigma_thresh, 0.f, 100.0f);
+    //     ImGui::SliderFloat("stop_thresh", &rend.options.stop_thresh, 0.001f, 0.4f);
+    //     ImGui::SliderFloat("bg_brightness", &rend.options.background_brightness, 0.f, 1.0f);
+    //     if (!rend.options.show_template) {
+    //         ImGui::SliderFloat("t_off_in", &rend.options.t_off_in, -1.0f, 3.0f);
+    //         ImGui::SliderFloat("t_off_out", &rend.options.t_off_out, -1.0f, 3.0f);
+    //     }
+    //     if ((human.n_poses()) && !rend.options.show_template) {
+    //         if (ImGui::SliderInt("pose", &selected_pose, 0, GLsizei(human.n_poses() - 1))) {
+    //             human.select_pose(selected_pose);
+    //         }
+    //     }
 
-    }  // End render node
-    ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-    if (ImGui::CollapsingHeader("Visualization")) {
-        ImGui::PushItemWidth(230);
-        ImGui::SliderFloat3("bb_min", rend.options.render_bbox, 0.0, 1.0);
-        ImGui::SliderFloat3("bb_max", rend.options.render_bbox + 3, 0.0, 1.0);
-        ImGui::SliderInt2("decomp", rend.options.basis_minmax, 0, std::max(tree.data_format.basis_dim - 1, 0));
-        ImGui::SliderFloat3("viewdir shift", rend.options.rot_dirs, float(-M_PI / 4), float(M_PI / 4));
-        ImGui::PopItemWidth();
-        if (ImGui::Button("Reset Viewdir Shift")) {
-            for (int i = 0; i < 3; ++i) rend.options.rot_dirs[i] = 0.f;
-        }
+    // }  // End render node
+    //     ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+    //     if (ImGui::CollapsingHeader("Visualization")) {
+    //         ImGui::PushItemWidth(230);
+    //         ImGui::SliderFloat3("bb_min", rend.options.render_bbox, 0.0, 1.0);
+    //         ImGui::SliderFloat3("bb_max", rend.options.render_bbox + 3, 0.0, 1.0);
+    //         ImGui::SliderInt2("decomp", rend.options.basis_minmax, 0, std::max(tree.data_format.basis_dim - 1, 0));
+    //         ImGui::SliderFloat3("viewdir shift", rend.options.rot_dirs, float(-M_PI / 4), float(M_PI / 4));
+    //         ImGui::PopItemWidth();
+    //         if (ImGui::Button("Reset Viewdir Shift")) {
+    //             for (int i = 0; i < 3; ++i) rend.options.rot_dirs[i] = 0.f;
+    //         }
 
-        ImGui::SliderFloat("Vis Color Multi", &rend.options.vis_color_multiplier, 0.0f, 10.0f);
-        ImGui::SliderFloat("Vis Color Off", &rend.options.vis_color_offset, -1.0f, 1.0f);
+    //         ImGui::SliderFloat("Vis Color Multi", &rend.options.vis_color_multiplier, 0.0f, 10.0f);
+    //         ImGui::SliderFloat("Vis Color Off", &rend.options.vis_color_offset, -1.0f, 1.0f);
 
-        ImGui::Checkbox("Apply Sigmoid", &rend.options.apply_sigmoid);
-        ImGui::Checkbox("Big-Pose Geometry", &rend.options.bigpose_geometry);
-        ImGui::Checkbox("Use Face Normal", &rend.options.use_face_normal);
+    //         ImGui::Checkbox("Apply Sigmoid", &rend.options.apply_sigmoid);
+    //         ImGui::Checkbox("Big-Pose Geometry", &rend.options.bigpose_geometry);
+    //         ImGui::Checkbox("Use Face Normal", &rend.options.use_face_normal);
 
-        ImGui::Checkbox("Show Grid", &rend.options.show_grid);
-        ImGui::Checkbox("Visualize Unseen", &rend.options.visualize_unseen);
-        ImGui::Checkbox("Visualize Intensity", &rend.options.visualize_intensity);
-        if (tree.extra_slot == 3) {
-            ImGui::Checkbox("Use Offset", &rend.options.use_offset);
-            if (rend.options.use_offset) {
-                ImGui::Checkbox("Visualize Offset", &rend.options.visualize_offset);
-                if (rend.options.visualize_offset) {
-                    ImGui::SliderFloat("Vis Offset Multi", &rend.options.vis_offset_multiplier, 1.0f, 50.0f);
-                }
-            }
-        }
-        if (tree.capacity && !rend.options.show_template) {
-            ImGui::Checkbox("Render Dynamic NeRF", &rend.options.render_dynamic_nerf);
-        }
+    //         ImGui::Checkbox("Show Grid", &rend.options.show_grid);
+    //         ImGui::Checkbox("Visualize Unseen", &rend.options.visualize_unseen);
+    //         ImGui::Checkbox("Visualize Intensity", &rend.options.visualize_intensity);
+    //         if (tree.extra_slot == 3) {
+    //             ImGui::Checkbox("Use Offset", &rend.options.use_offset);
+    //             if (rend.options.use_offset) {
+    //                 ImGui::Checkbox("Visualize Offset", &rend.options.visualize_offset);
+    //                 if (rend.options.visualize_offset) {
+    //                     ImGui::SliderFloat("Vis Offset Multi", &rend.options.vis_offset_multiplier, 1.0f, 50.0f);
+    //                 }
+    //             }
+    //         }
+    //         if (tree.capacity && !rend.options.show_template) {
+    //             ImGui::Checkbox("Render Dynamic NeRF", &rend.options.render_dynamic_nerf);
+    //         }
 
-        if (human.verts.size() && !rend.options.show_template) {
-            ImGui::Checkbox("Render Guide Mesh", &rend.options.render_guide_mesh);
-            if (rend.options.render_guide_mesh) {
-                ImGui::Checkbox("Show Bone Association", &rend.options.show_bone_association);
-            }
-        }
-        if (human.all_poses.size() && !rend.options.show_template) {
-            ImGui::Checkbox("Play Animation", &play_animation);
-        }
-#ifdef VOLREND_CUDA
-        ImGui::SameLine();
-        ImGui::Checkbox("Render Depth", &rend.options.render_depth);
-#endif
-        if (rend.options.show_grid) {
-            ImGui::SliderInt("grid max depth", &rend.options.grid_max_depth, 0, 7);
-        }
-    }
+    //         if (human.verts.size() && !rend.options.show_template) {
+    //             ImGui::Checkbox("Render Guide Mesh", &rend.options.render_guide_mesh);
+    //             if (rend.options.render_guide_mesh) {
+    //                 ImGui::Checkbox("Show Bone Association", &rend.options.show_bone_association);
+    //             }
+    //         }
+    //         if (human.all_poses.size() && !rend.options.show_template) {
+    //             ImGui::Checkbox("Play Animation", &play_animation);
+    //         }
+    // #ifdef VOLREND_CUDA
+    //         ImGui::SameLine();
+    //         ImGui::Checkbox("Render Depth", &rend.options.render_depth);
+    // #endif
+    //         if (rend.options.show_grid) {
+    //             ImGui::SliderInt("grid max depth", &rend.options.grid_max_depth, 0, 7);
+    //         }
+    //     }
 
     ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
     if (ImGui::CollapsingHeader("Manipulation")) {
@@ -442,74 +443,74 @@ void draw_imgui(VolumeRenderer& rend, N3Tree& tree, Human& human) {
                 rend.meshes.push_back(std::move(cube));
             }
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Latti##addlattice")) {
-            static int lattid = 0;
-            {
-                Mesh latt = Mesh::Lattice();
-                if (tree.N > 0) {
-                    latt.scale =
-                        1.f / std::min(std::min(tree.scale[0], tree.scale[1]),
-                                       tree.scale[2]);
-                    for (int i = 0; i < 3; ++i) {
-                        latt.translation[i] =
-                            -1.f / tree.scale[0] * tree.offset[0];
-                    }
-                }
-                latt.update();
-                if (lattid) latt.name = latt.name + std::to_string(lattid);
-                ++lattid;
-                rend.meshes.push_back(std::move(latt));
-            }
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Load OBJ")) {
-            open_obj_mesh_dialog.Open();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Clear All")) {
-            rend.meshes.clear();
-        }
+        // ImGui::SameLine();
+        // if (ImGui::Button("Latti##addlattice")) {
+        //     static int lattid = 0;
+        //     {
+        //         Mesh latt = Mesh::Lattice();
+        //         if (tree.N > 0) {
+        //             latt.scale =
+        //                 1.f / std::min(std::min(tree.scale[0], tree.scale[1]),
+        //                                tree.scale[2]);
+        //             for (int i = 0; i < 3; ++i) {
+        //                 latt.translation[i] =
+        //                     -1.f / tree.scale[0] * tree.offset[0];
+        //             }
+        //         }
+        //         latt.update();
+        //         if (lattid) latt.name = latt.name + std::to_string(lattid);
+        //         ++lattid;
+        //         rend.meshes.push_back(std::move(latt));
+        //     }
+        // }
+        // ImGui::SameLine();
+        // if (ImGui::Button("Load OBJ")) {
+        //     open_obj_mesh_dialog.Open();
+        // }
+        // ImGui::SameLine();
+        // if (ImGui::Button("Clear All")) {
+        //     rend.meshes.clear();
+        // }
 
-        // #ifdef VOLREND_CUDA
-        if (tree.capacity) {
-            ImGui::BeginGroup();
-            ImGui::Checkbox("Show Template NeRF",
-                            &rend.options.show_template);
-            ImGui::Checkbox("Enable Lumisphere Probe",
-                            &rend.options.enable_probe);
-            if (rend.options.enable_probe) {
-                ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-                if (ImGui::TreeNode("Probe")) {
-                    static glm::mat4 probe_trans;
-                    static bool show_probe_gizmo = true;
-                    float* probe = rend.options.probe;
-                    probe_trans =
-                        glm::translate(glm::mat4(1.f),
-                                       glm::vec3(probe[0], probe[1], probe[2]));
+        // // #ifdef VOLREND_CUDA
+        // if (tree.capacity) {
+        //     ImGui::BeginGroup();
+        //     ImGui::Checkbox("Show Template NeRF",
+        //                     &rend.options.show_template);
+        //     ImGui::Checkbox("Enable Lumisphere Probe",
+        //                     &rend.options.enable_probe);
+        //     if (rend.options.enable_probe) {
+        //         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+        //         if (ImGui::TreeNode("Probe")) {
+        //             static glm::mat4 probe_trans;
+        //             static bool show_probe_gizmo = true;
+        //             float* probe = rend.options.probe;
+        //             probe_trans =
+        //                 glm::translate(glm::mat4(1.f),
+        //                                glm::vec3(probe[0], probe[1], probe[2]));
 
-                    ImGui::Checkbox("Show gizmo", &show_probe_gizmo);
-                    if (show_probe_gizmo) {
-                        ImGuizmo::SetID(0);
-                        if (ImGuizmo::Manipulate(
-                                glm::value_ptr(w2c),
-                                glm::value_ptr(camera_persp_prj),
-                                ImGuizmo::TRANSLATE, ImGuizmo::LOCAL,
-                                glm::value_ptr(probe_trans), NULL, NULL, NULL,
-                                NULL)) {
-                            for (int i = 0; i < 3; ++i)
-                                probe[i] = probe_trans[3][i];
-                        }
-                    }
-                    ImGui::InputFloat3("probe", probe);
-                    ImGui::SliderInt("probe_win_sz",
-                                     &rend.options.probe_disp_size, 50, 800);
-                    ImGui::TreePop();
-                }
-            }
-            ImGui::EndGroup();
-        }
-        // #endif
+        //             ImGui::Checkbox("Show gizmo", &show_probe_gizmo);
+        //             if (show_probe_gizmo) {
+        //                 ImGuizmo::SetID(0);
+        //                 if (ImGuizmo::Manipulate(
+        //                         glm::value_ptr(w2c),
+        //                         glm::value_ptr(camera_persp_prj),
+        //                         ImGuizmo::TRANSLATE, ImGuizmo::LOCAL,
+        //                         glm::value_ptr(probe_trans), NULL, NULL, NULL,
+        //                         NULL)) {
+        //                     for (int i = 0; i < 3; ++i)
+        //                         probe[i] = probe_trans[3][i];
+        //                 }
+        //             }
+        //             ImGui::InputFloat3("probe", probe);
+        //             ImGui::SliderInt("probe_win_sz",
+        //                              &rend.options.probe_disp_size, 50, 800);
+        //             ImGui::TreePop();
+        //         }
+        //     }
+        //     ImGui::EndGroup();
+        // }
+        // // #endif
     }
     open_obj_mesh_dialog.Display();
     if (open_obj_mesh_dialog.HasSelected()) {
@@ -539,43 +540,43 @@ void draw_imgui(VolumeRenderer& rend, N3Tree& tree, Human& human) {
         open_obj_mesh_dialog.ClearSelected();
     }
 
-    open_npz_guide_dialog.Display();
-    if (open_npz_guide_dialog.HasSelected()) {
-        // Load mesh
-        auto sels = open_npz_guide_dialog.GetMultiSelected();
-        for (auto& fpath : sels) {
-            const std::string path = fpath.string();
-            printf("Load NPZ Guide Mesh: %s\n", path.c_str());
-            human = Human::load_human_npz(path);
-            if (human.verts.size()) {
-                human.update();
-                rend.set(human);
-                puts("Load success\n");
-                rend.options.show_template = false;
-                rend.options.render_guide_mesh = !tree.capacity;  // show guide mesh is tree hasn't been loaded
-            } else {
-                puts("Load failed\n");
-            }
-        }
-        open_npz_guide_dialog.ClearSelected();
-    }
+    // open_npz_guide_dialog.Display();
+    // if (open_npz_guide_dialog.HasSelected()) {
+    //     // Load mesh
+    //     auto sels = open_npz_guide_dialog.GetMultiSelected();
+    //     for (auto& fpath : sels) {
+    //         const std::string path = fpath.string();
+    //         printf("Load NPZ Guide Mesh: %s\n", path.c_str());
+    //         human = Human::load_human_npz(path);
+    //         if (human.verts.size()) {
+    //             human.update();
+    //             rend.set(human);
+    //             puts("Load success\n");
+    //             rend.options.show_template = false;
+    //             rend.options.render_guide_mesh = !tree.capacity;  // show guide mesh is tree hasn't been loaded
+    //         } else {
+    //             puts("Load failed\n");
+    //         }
+    //     }
+    //     open_npz_guide_dialog.ClearSelected();
+    // }
 
-    open_npz_poses_dialog.Display();
-    if (open_npz_poses_dialog.HasSelected()) {
-        // Load mesh
-        auto sels = open_npz_poses_dialog.GetMultiSelected();
-        for (auto& fpath : sels) {
-            const std::string path = fpath.string();
-            printf("Load NPZ Human Poses: %s\n", path.c_str());
-            human.load_poses_npz(path);  // FIXME: will discard all loaded poses if selecting another guide mesh
-            if (human.all_poses.size()) {
-                puts("Load success\n");
-            } else {
-                puts("Load failed\n");
-            }
-        }
-        open_npz_poses_dialog.ClearSelected();
-    }
+    // open_npz_poses_dialog.Display();
+    // if (open_npz_poses_dialog.HasSelected()) {
+    //     // Load mesh
+    //     auto sels = open_npz_poses_dialog.GetMultiSelected();
+    //     for (auto& fpath : sels) {
+    //         const std::string path = fpath.string();
+    //         printf("Load NPZ Human Poses: %s\n", path.c_str());
+    //         human.load_poses_npz(path);  // FIXME: will discard all loaded poses if selecting another guide mesh
+    //         if (human.all_poses.size()) {
+    //             puts("Load success\n");
+    //         } else {
+    //             puts("Load failed\n");
+    //         }
+    //     }
+    //     open_npz_poses_dialog.ClearSelected();
+    // }
 
     ImGui::End();
 
@@ -847,12 +848,12 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-    N3Tree tree;
-    bool init_loaded = false;
-    if (args.count("file")) {
-        init_loaded = true;
-        tree.open(args["file"].as<std::string>());
-    }
+    // N3Tree tree;
+    // bool init_loaded = false;
+    // if (args.count("file")) {
+    //     init_loaded = true;
+    //     tree.open(args["file"].as<std::string>());
+    // }
     int width = args["width"].as<int>(), height = args["height"].as<int>();
     float fx = args["fx"].as<float>();
     float fy = args["fy"].as<float>();
@@ -860,7 +861,7 @@ int main(int argc, char* argv[]) {
 
     GLFWwindow* window = glfw_init(width, height);
 
-    std::chrono::high_resolution_clock::time_point last_time = std::chrono::high_resolution_clock::now();
+    // std::chrono::high_resolution_clock::time_point last_time = std::chrono::high_resolution_clock::now();
 
     {
         VolumeRenderer rend;
@@ -869,18 +870,19 @@ int main(int argc, char* argv[]) {
         }
 
         rend.options = internal::render_options_from_args(args);
-        if (init_loaded && tree.use_ndc) {
-            // Special inital coordinates for NDC
-            // (pick average camera)
-            rend.camera.center = glm::vec3(0);
-            rend.camera.origin = glm::vec3(0, 0, -3);
-            rend.camera.v_back = glm::vec3(0, 0, 1);
-            rend.camera.v_world_up = glm::vec3(0, 1, 0);
-            if (fx <= 0) {
-                rend.camera.fx = rend.camera.fy = tree.ndc_focal * 0.25f;
-            }
-            rend.camera.movement_speed = 0.1f;
-        } else {
+        // if (init_loaded && tree.use_ndc) {
+        //     // Special inital coordinates for NDC
+        //     // (pick average camera)
+        //     rend.camera.center = glm::vec3(0);
+        //     rend.camera.origin = glm::vec3(0, 0, -3);
+        //     rend.camera.v_back = glm::vec3(0, 0, 1);
+        //     rend.camera.v_world_up = glm::vec3(0, 1, 0);
+        //     if (fx <= 0) {
+        //         rend.camera.fx = rend.camera.fy = tree.ndc_focal * 0.25f;
+        //     }
+        //     rend.camera.movement_speed = 0.1f;
+        // } else
+        {
             auto cen = args["center"].as<std::vector<float>>();
             rend.camera.center = glm::vec3(cen[0], cen[1], cen[2]);
             auto origin = args["origin"].as<std::vector<float>>();
@@ -894,17 +896,17 @@ int main(int argc, char* argv[]) {
             rend.camera.fy = rend.camera.fx;
         }
 
-        {
-            std::string drawlist_load_path = args["draw"].as<std::string>();
-            if (drawlist_load_path.size()) {
-                rend.meshes = Mesh::open_drawlist(drawlist_load_path);
-            }
-        }
+        // {
+        //     std::string drawlist_load_path = args["draw"].as<std::string>();
+        //     if (drawlist_load_path.size()) {
+        //         rend.meshes = Mesh::open_drawlist(drawlist_load_path);
+        //     }
+        // }
 
         glfwGetFramebufferSize(window, &width, &height);
-        Human human;  // creation of human object involves some shader stuff, should be put behind glew init
-        rend.set(human);
-        rend.set(tree);
+        // Human human;  // creation of human object involves some shader stuff, should be put behind glew init
+        // rend.set(human);
+        // rend.set(tree);
         rend.resize(width, height);
 
         // Set user pointer and callbacks
@@ -916,27 +918,27 @@ int main(int argc, char* argv[]) {
         glfwSetFramebufferSizeCallback(window, glfw_window_size_callback);
 
         while (!glfwWindowShouldClose(window)) {
-            glEnable(GL_DEPTH_TEST);
-            glEnable(GL_PROGRAM_POINT_SIZE);
-            glPointSize(4.f);
+            // glEnable(GL_DEPTH_TEST);
+            // glEnable(GL_PROGRAM_POINT_SIZE);
+            // glPointSize(4.f);
             glfw_update_title(window);
 
-            if (play_animation) {
-                std::chrono::high_resolution_clock::time_point now_time = std::chrono::high_resolution_clock::now();
-                double ns = std::chrono::duration<double, std::nano>(now_time - last_time).count();
-                if (ns >= 1e9 / fps) {
-                    last_time = now_time;
-                    if (human.n_poses()) {
-                        ++selected_pose %= human.n_poses();
-                    } else {
-                        selected_pose = 0;
-                    }
-                    human.select_pose(selected_pose);
-                }
-            }
+            // if (play_animation) {
+            //     std::chrono::high_resolution_clock::time_point now_time = std::chrono::high_resolution_clock::now();
+            //     double ns = std::chrono::duration<double, std::nano>(now_time - last_time).count();
+            //     if (ns >= 1e9 / fps) {
+            //         last_time = now_time;
+            //         if (human.n_poses()) {
+            //             ++selected_pose %= human.n_poses();
+            //         } else {
+            //             selected_pose = 0;
+            //         }
+            //         human.select_pose(selected_pose);
+            //     }
+            // }
             rend.render();
 
-            if (!nogui) draw_imgui(rend, tree, human);
+            if (!nogui) draw_imgui(rend);
 
             glfwSwapBuffers(window);
             glFinish();
