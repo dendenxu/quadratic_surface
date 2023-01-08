@@ -21,8 +21,8 @@ out vec4 frag_color;
 
 // Computer vision style camera
 struct Camera {
-    mat4x3 transform;
-    mat4x4 w2c;
+    mat4x3 transform;  // c2w
+    mat4x4 w2c;        // w2c
     mat4x4 K;
     vec2 reso;
     vec2 focal;
@@ -132,7 +132,7 @@ int query_single_from_root(inout vec3 xyz, out float cube_sz) {
         if (skip == 0) {
             break;
         }
-        ptr += skip * 8;  //N3;
+        ptr += skip * 8;  // N3;
     }
     cube_sz = 1 / pow(2.0, cube_sz);  // ! why? for precision?
     return sub_ptr;                   // sub_ptr is just the smallest child of the queried xyz
@@ -449,87 +449,184 @@ vec4 draw_probe(out bool drawn) {
     return output_color;
 }
 
-void main() {
-    if (drawing_probe) {
-        bool drawn;
-        vec4 color = draw_probe(drawn);
-        if (!drawn) discard;
-        // frag_color = vec4(1.0, 0, 0, 1.0);
-        frag_color = color;
-    } else {
-        float tmax_bg = 1e9;
-        float tmin_fg = 0;
-        vec3 rgb;
-        vec3 dir;
-        vec3 vdir;
-        vec3 cen;
+// Ray Tracing Quadric shapes (with box constraint)
+// based on the paper: Ray Tracing Arbitrary Objects on the GPU, A. Wood et al
+const mat4 cylinder = mat4(
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, -0.25);
 
-        // Get depth of drawn meshes
-        ivec2 screen_pt = ivec2(gl_FragCoord.x, gl_FragCoord.y);
-        // mesh_depth was computed using length(CamFragPos.xyz), thus this is not actually a depth but a t for camera cen and unit direction (which is the length to the object) (length is preserved in rigid transformation)
-        float tmax_mesh = texelFetch(mesh_depth_tex, screen_pt, 0).r;  // mesh's projection is just effectively the ray casting process
-        vec4 mesh_color = texelFetch(mesh_color_tex, screen_pt, 0);
-        vec3 bg_color = vec3(mesh_color);
+const mat4 sphere = mat4(
+    4.0, 0.0, 0.0, 0.0,
+    0.0, 4.0, 0.0, 0.0,
+    0.0, 0.0, 4.0, 0.0,
+    0.0, 0.0, 0.0, -1.0);
 
-        if (opt.show_template) {
-            vec2 xy = (vec2(gl_FragCoord) - 0.5 * cam.reso + vec2(-0.5, 0.5)) / cam.focal;
-            dir = normalize(vec3(xy, -1.0));
-            dir = normalize(mat3(cam.transform) * dir);
-            cen = cam.transform[3];
+const mat4 ellipticParaboloid = mat4(
+    4.0, 0.0, 0.0, 0.0,
+    0.0, 4.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 0.0);
 
-            vdir = dir;
-            cen = tree.center + cen * tree.scale;
-            rodrigues(opt.rot_dirs, vdir);
-            tmin_fg = 0;
-            tmax_bg = tmax_mesh;
-        } else {
-            // if (opt.show_template) {
-            //     frag_color = vec4(0, 0, 1, 1);
-            //     return;
-            // }
-            // vec3 shadeNormal = vec3(0, 0, 1);
-            // vec3 xTangent = dFdx(vec3(world_frag_pos));
-            // vec3 yTangent = dFdy(vec3(world_frag_pos));
-            // shadeNormal = normalize(cross(xTangent, yTangent));
-            // frag_color = vec4(shadeNormal * 0.5 + vec3(0.5), 0.5);  // transform [-1,1] to [0, 1]
-            // return;
+const mat4 hyperbolicParaboloid = mat4(
+    4.0, 0.0, 0.0, 0.0,
+    0.0, -4.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 0.0);
 
-            // gl_FragCoord is in viewport coordinates
-            // ! why -0.5, 0.5 here?
-            // vec2 xy = (vec2(gl_FragCoord) - 0.5 * cam.reso + vec2(-0.5, 0.5)) / cam.focal;  // (x, y, -1) in the original camera space
-            // Camera to NDC: cam.focal * xy / z
-            // NDC to viewport: xy * wh + wh/2
+const mat4 circularCone = mat4(
+    4.0, 0.0, 0.0, 0.0,
+    0.0, -4.0, 0.0, 0.0,
+    0.0, 0.0, 4.0, 0.0,
+    0.0, 0.0, 0.0, 0.0);
 
-            // thus the vector itself is the ray direction
-            // you just have to orient it to the world coordinates
+const mat4 quadraticPlane = mat4(
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 1.0, 0.0, 0.0);
 
-            vec3 pos = vec3(tpose_frag_pos);  // interpolated position in tpose coords
-            cen = vec3(tpose_cam_center);     // OpenGL default to column major, this is getting the last column
+const mat4 hyperbolicPlane = mat4(
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 2.0,
+    0.0, 0.0, 0.0, 0.0,
+    0.0, 2.0, 0.0, 0.0);
 
-            // and the transform is just the camera to world transformation, whose third column is the center of the camera in world coordinates
-            // now we have the camera center
-            // vec3 dir = normalize(mat3(cam.transform) * vec3(xy, -1.0));  // length of 1 // cam2world
+const mat4 intersectingPlanes = mat4(
+    0.0, 1.0, 0.0, 0.0,
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0);
 
-            vec3 ray = pos - cen;
-            float t = length(ray);               // this is the t to go from the camera center to the world position
-            float tmin_out = t - opt.t_off_out;  // 10mm for 1cm
-            float tmax_in = t + opt.t_off_in;    // 10mm for 1cm
-            dir = ray / t;                       // length of 1
+const float EPSILON = 0.000001;
 
-            vdir = dir;                            // view direction and ray direction (they should correspond)
-            cen = tree.center + cen * tree.scale;  // offset the camera center in tree's coordinate system, which just involves a scaling and translation: [0,1]^3
-            pos = tree.center + pos * tree.scale;  // similar to the camera center, transform it to tree coordinate system: [0,1]^3
-            // TODO: make FragPos a standard vec3 to reduce memory footprint
-            // TODO: actually we shouln't be needing the camera center no more
-            // now the cen variable and dir/vdir variables are all in tree's coordinate system
-            rodrigues(opt.rot_dirs, vdir);
-            // ! this will follow the mesh strickly thus there's gonna be some missing part
-            tmin_fg = tmin_out;
-            tmax_bg = min(tmax_in, tmax_mesh);
+const int samples = 4;  // per x,y per fragment
+
+bool getPointAtTime(in float t, in vec4 ro, in vec4 rd, out vec3 point) {
+    if (t < 0.0) {
+        return false;
+    }
+
+    point = ro.xyz + t * rd.xyz;
+
+    // constrain to a box
+    return all(greaterThanEqual(point, vec3(-0.5 - EPSILON))) && all(lessThanEqual(point, vec3(0.5 + EPSILON)));
+}
+
+// adapted from https://iquilezles.org/articles/intersectors
+bool intersect_box(in vec4 ro, in vec4 rd, out vec4 outPos) {
+    vec3 m = 1.0 / rd.xyz;
+    vec3 n = m * ro.xyz;
+    vec3 k = abs(m);
+    vec3 t1 = -n - k;
+    vec3 t2 = -n + k;
+    float tN = max(max(t1.x, t1.y), t1.z);
+    float tF = min(min(t2.x, t2.y), t2.z);
+    if (tN > tF || tF < 0.0) return false;  // no intersection
+    outPos = ro + rd * tN;
+    return true;
+}
+
+bool intersect_quadric(in mat4 shape, in vec4 ro, in vec4 rd, out vec3 point) {
+    vec4 rda = shape * rd;
+    vec4 roa = shape * ro;
+
+    // quadratic equation
+    float a = dot(rd, rda);
+    float b = dot(ro, rda) + dot(rd, roa);
+    float c = dot(ro, roa);
+
+    if (abs(a) < EPSILON) {
+        if (abs(b) < EPSILON) {
+            return getPointAtTime(c, ro, rd, point);
         }
 
-        rgb = trace_ray(dir, vdir, cen, tmin_fg, tmax_bg, bg_color);
-        rgb = clamp(rgb, 0.0, 1.0);
-        frag_color = vec4(rgb, 1.0);
+        return getPointAtTime(-c / b, ro, rd, point);
     }
+
+    float square = b * b - 4.0 * a * c;
+
+    if (square < EPSILON) {
+        return false;  // no hit
+    }
+
+    float temp = sqrt(square);
+    float denom = 2.0 * a;
+
+    float t1 = (-b - temp) / denom;
+    float t2 = (-b + temp) / denom;
+
+    // draw both sides but pick the closest point
+    vec3 p1 = vec3(0.0);
+    vec3 p2 = vec3(0.0);
+
+    bool hasP1 = getPointAtTime(t1, ro, rd, p1);
+    bool hasP2 = getPointAtTime(t2, ro, rd, p2);
+
+    if (!hasP1) {
+        point = p2;
+        return hasP2;
+    }
+
+    if (!hasP2) {
+        point = p1;
+        return true;
+    }
+
+    if (t1 < t2) {
+        point = p1;
+    } else {
+        point = p2;
+    }
+
+    return true;
+}
+
+vec3 draw_quadric(in mat4 shape, in vec4 ro, in vec4 rd) {
+    vec3 coll_point = vec3(0.0);
+
+    // intersect the bounding box first and use the intersected origin for solving the quadric
+    // idea from mla: https://www.shadertoy.com/view/wdlBR2
+    if (intersect_box(ro, rd, ro) && intersect_quadric(shape, ro, rd, coll_point)) {
+        // some simple fake shading for now
+        return normalize((shape * vec4(coll_point, 1.0)).xyz) / 2.0 + 0.5;
+    } else {
+        // otherwise return black for now
+        return vec3(0.0);
+    }
+}
+
+void main() {
+    // https://computergraphics.stackexchange.com/questions/5724/glsl-can-someone-explain-why-gl-fragcoord-xy-screensize-is-performed-and-for
+    // screen coordinate ray origin
+    vec3 ray_position = vec3(0.0, 0.0, -10.0);
+    // screen coordiante ray target
+    vec3 ray_target = vec3((gl_FragCoord.xy / cam.reso.xy) * 2.0 - 1.0, 1.0);
+    vec2 ray_step = (1.0 / cam.reso.xy) / float(samples);
+    mat4 rot_matrix = cam.w2c;  // world to camera coordinate rotation matrix
+    vec3 result = vec3(0.0);
+
+    for (int y = 0; y < samples; y++) {
+        for (int x = 0; x < samples; x++) {
+            vec3 ray_dir = normalize(ray_target + vec3(ray_step * vec2(x, y), 0.0) - ray_position);
+            vec4 new_dir = rot_matrix * vec4(ray_dir, 0.0);
+
+            // quadrics
+            vec3 pixel = vec3(0.0);
+
+            pixel += draw_quadric(cylinder, vec4(ray_position - vec3(-3.0, 1.0, 30.0), 1.0) * rot_matrix, new_dir);
+            pixel += draw_quadric(sphere, vec4(ray_position - vec3(-1.5, 1.0, 30.0), 1.0) * rot_matrix, new_dir);
+            pixel += draw_quadric(ellipticParaboloid, vec4(ray_position - vec3(0.0, 1.0, 30.0), 1.0) * rot_matrix, new_dir);
+            pixel += draw_quadric(hyperbolicParaboloid, vec4(ray_position - vec3(1.5, 1.0, 30.0), 1.0) * rot_matrix, new_dir);
+            pixel += draw_quadric(circularCone, vec4(ray_position - vec3(3.0, 1.0, 30.0), 1.0) * rot_matrix, new_dir);
+            pixel += draw_quadric(quadraticPlane, vec4(ray_position - vec3(-2.0, -1.0, 30.0), 1.0) * rot_matrix, new_dir);
+            pixel += draw_quadric(hyperbolicPlane, vec4(ray_position - vec3(0.0, -1.0, 30.0), 1.0) * rot_matrix, new_dir);
+            pixel += draw_quadric(intersectingPlanes, vec4(ray_position - vec3(2.0, -1.0, 30.0), 1.0) * rot_matrix, new_dir);
+
+            result += clamp(pixel, 0.0, 1.0);
+        }
+    }
+
+    frag_color = vec4(result / float(samples * samples), 1.0);
 }
