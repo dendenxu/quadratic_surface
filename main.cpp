@@ -785,7 +785,7 @@ GLFWwindow* glfw_init(const int width, const int height) {
     }
 
     // ignore vsync for now
-    // in some G-Sync enabled applications, you may get a consistent 160 fps
+    // in some G-Sync enabled systems, you may get a consistent 160 fps
     // when it should actually have been a few thousands
     glfwSwapInterval(0);
 
