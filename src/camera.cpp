@@ -37,11 +37,6 @@ Camera::Camera(int width, int height, float fx, float fy)
 }
 
 Camera::~Camera() {
-#ifdef VOLREND_CUDA
-    if (device.transform != nullptr) {
-        cuda(Free(device.transform));
-    }
-#endif
 }
 
 void Camera::update(bool transform_from_vecs, bool copy_cuda) {
@@ -60,19 +55,14 @@ void Camera::update(bool transform_from_vecs, bool copy_cuda) {
 
     const float k_fx = fx / (0.5f * width);
     const float k_fy = fy / (0.5f * height);
-    // const float k_cx = cx / (0.5f * width) - 1;
-    // const float k_cy = cy / (0.5f * height) - 1;
-    // const float k_cx = 0.f;
-    // const float k_cy = 0.f;
-    // colume major -> different than in numpy or torch
 
-    /** 
-     * This might look a little bit confusing at first glance, 
+    /**
+     * This might look a little bit confusing at first glance,
      * but the actual K (intrinsic or projection or whatever)
-     * is to be used in conjection with the V matrix, the 
+     * is to be used in conjection with the V matrix, the
      * definition of which decides entirely how the K matrix
      * should look like.
-     * 
+     *
      * In this example, we define the camera to look right back
      * and up, which means all Z values should have been negative
      * after applying the projeciton defined below:
@@ -105,15 +95,15 @@ void Camera::update(bool transform_from_vecs, bool copy_cuda) {
 
     inv_K = glm::inverse(K);
 
-// #ifdef VOLREND_CUDA
-//     if (copy_cuda) {
-//         if (device.transform == nullptr) {
-//             cuda(Malloc((void**)&device.transform, 12 * sizeof(transform[0])));
-//         }
-//         cuda(MemcpyAsync(device.transform, glm::value_ptr(transform),
-//                          12 * sizeof(transform[0]), cudaMemcpyHostToDevice));
-//     }
-// #endif
+    // #ifdef VOLREND_CUDA
+    //     if (copy_cuda) {
+    //         if (device.transform == nullptr) {
+    //             cuda(Malloc((void**)&device.transform, 12 * sizeof(transform[0])));
+    //         }
+    //         cuda(MemcpyAsync(device.transform, glm::value_ptr(transform),
+    //                          12 * sizeof(transform[0]), cudaMemcpyHostToDevice));
+    //     }
+    // #endif
 }
 
 void Camera::begin_drag(float x, float y, bool is_panning, bool about_origin) {

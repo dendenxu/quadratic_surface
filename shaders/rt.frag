@@ -30,76 +30,7 @@ struct Camera {
     vec3 center;
 };
 
-// // Store tree data
-// struct N3TreeSpec {
-//     int N;
-//     int data_dim;    // usable datadim, including extra_slot
-//     int extra_slot;  // if not zero, we'll do an offset first
-//     int format;
-//     int basis_dim;
-//     float ndc_width;
-//     float ndc_height;
-//     float ndc_focal;
-//     vec3 center;
-//     vec3 scale;
-// };
-
-// // Store render options
-// struct RenderOptions {
-//     // Epsilon added to each step
-//     float step_size;
-//     // If remaining light intensity/alpha < this amount stop marching
-//     float stop_thresh;
-//     // If sigma < this, skips
-//     float sigma_thresh;
-//     // Background brightness
-//     float background_brightness;
-
-//     // Rendering bounding box (relative to outer tree bounding box [0, 1])
-//     // [minx, miny, minz, maxx, maxy, maxz]
-//     float render_bbox[6];
-//     // Range of basis functions to use
-//     int basis_minmax[2];
-//     // Rotation applied to viewdirs for all rays
-//     vec3 rot_dirs;
-
-//     float t_off_out;  // how much to render outside the guide mesh
-//     float t_off_in;   // how much to render inside the mesh
-
-//     bool use_offset;  // FIXME: should check whether extra_slot is available
-//     bool visualize_offset;
-
-//     bool visualize_unseen;
-//     bool visualize_intensity;
-
-//     float vis_offset_multiplier;
-
-//     float vis_color_multiplier;
-//     float vis_color_offset;
-
-//     bool apply_sigmoid;
-
-//     vec3 probe;
-//     float probe_disp_size;
-
-//     bool show_template;
-//     bool bigpose_geometry;
-// };
-
 uniform Camera cam;
-// uniform RenderOptions opt;
-// uniform N3TreeSpec tree;
-
-// uniform bool drawing_probe;  // THIS IS AN IMPORTANT SWITCH FOR THE SHADER
-
-// uniform int tree_child_dim;
-// uniform highp isampler2D tree_child_tex;
-// uniform int tree_data_dim;  // ? you've got the tree.data_dim, why still need this? Or is this just the texture data_dim?
-// uniform mediump sampler2D tree_data_tex;
-
-// Mesh rendering compositing
-// uniform mediump sampler2D mesh_depth_tex;
-// uniform mediump sampler2D mesh_color_tex;
 
 // Ray Tracing Quadric shapes (with box constraint)
 // based on the paper: Ray Tracing Arbitrary Objects on the GPU, A. Wood et al
@@ -253,43 +184,28 @@ void main() {
     // https://www.shadertoy.com/view/fl3SDN
     // https://computergraphics.stackexchange.com/questions/5724/glsl-can-someone-explain-why-gl-fragcoord-xy-screensize-is-performed-and-for
 
-    // screen coordinate ray origin
-    // float aspect_ratio = cam.reso.x / cam.reso.y;
-    // vec3 ray_position = vec3(0.0, 0.0, -10.0);
-    // screen coordiante ray target
-    // vec3 ray_target = vec3((gl_FragCoord.xy / cam.reso.xy) * 2.0 - 1.0, 1.0);
-    // ray_target.y /= aspect_ratio;
+    // vec2 fcl_inv = 1.0 / vec2(cam.K[0].x, cam.K[1].y);     // inverse of K
+    vec2 fcl_inv = 1.0 / cam.reso;                         // inverse of K
+    vec2 pix_scr = gl_FragCoord.xy * fcl_inv * 2.0 - 1.0;  // screen space pixel
+    vec2 pix_stp = (1.0 * fcl_inv) / float(samples);       // super sampling substeps
 
-    // vec2 ray_step = (1.0 / cam.reso.xy) / float(samples);
-    // mat4 rot_matrix = mat4(cam.w2c);
-    // mat4 rot_matrix = mat4(1.0);
-
-    vec2 pix_scr = gl_FragCoord.xy;              // screen space pixel
-    vec2 pix_step = vec2(1.0 / float(samples));  // super sampling substeps
+    // mat4 rot_mat = mat4(cam.c2w);
+    mat4 rot_mat = mat4(1.0);   // camera to world transform
+    vec3 ray_ori = cam.center;  // world space origin
 
     vec3 result = vec3(0.0);
-
     for (int y = 0; y < samples; y++) {
         for (int x = 0; x < samples; x++) {
-            vec3 pix_cam = vec3(cam.inv_K * vec4(pix_scr + pix_step * vec2(x, y), 1.0, 1.0));  // camera space pixel
-            vec3 pix_world = vec3(cam.c2w * vec4(pix_cam, 1.0));                               // world space pixel
-            vec3 ray_dir = normalize(pix_world - cam.center);                                  // ray direction
+            vec2 pix_sub = pix_scr + pix_stp * vec2(x, y);      // subpixel
+            vec3 pix_cam = vec3(pix_sub, 1.0);                  // camera space pixel
+            vec3 pix_wld = vec3(rot_mat * vec4(pix_cam, 1.0));  // world space pixel
+            vec3 ray_dir = normalize(pix_wld - ray_ori);        // ray direction
 
             // quadrics
             vec3 pixel = vec3(0.0);
-
-            // pixel += draw_quadric(cylinder, vec4(ray_position - vec3(-3.0, 1.0, 30.0), 1.0) * rot_matrix, new_dir);
-            // pixel += draw_quadric(sphere, vec4(ray_position - vec3(-1.5, 1.0, 30.0), 1.0) * rot_matrix, new_dir);
-            pixel += draw_quadric(ellipticParaboloid, vec4(cam.center, 1.0), vec4(ray_dir, 0.0));
-            // pixel += draw_quadric(hyperbolicParaboloid, vec4(ray_position - vec3(1.5, 1.0, 30.0), 1.0) * rot_matrix, new_dir);
-            // pixel += draw_quadric(circularCone, vec4(ray_position - vec3(3.0, 1.0, 30.0), 1.0) * rot_matrix, new_dir);
-            // pixel += draw_quadric(quadraticPlane, vec4(ray_position - vec3(-2.0, -1.0, 30.0), 1.0) * rot_matrix, new_dir);
-            // pixel += draw_quadric(hyperbolicPlane, vec4(ray_position - vec3(0.0, -1.0, 30.0), 1.0) * rot_matrix, new_dir);
-            // pixel += draw_quadric(intersectingPlanes, vec4(ray_position - vec3(2.0, -1.0, 30.0), 1.0) * rot_matrix, new_dir);
-
+            pixel += draw_quadric(sphere, vec4(ray_ori, 1.0), vec4(ray_dir, 0.0));
             result += clamp(pixel, 0.0, 1.0);
         }
     }
-
     frag_color = vec4(result / float(samples * samples), 1.0);
 }
