@@ -87,12 +87,12 @@ void draw_imgui(VolumeRenderer& rend
                 // Human& human
 ) {
     auto& cam = rend.camera;
+    auto& quadric = rend.quadric;
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-
     ImGui::SetNextWindowPos(ImVec2(20.f, 20.f), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(340.f, 400.f), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(340.f, 650.f), ImGuiCond_Once);
 
     static char title[128] = {0};
     if (title[0] == 0) {
@@ -187,6 +187,20 @@ void draw_imgui(VolumeRenderer& rend
         }
     }  // End camera node
 
+    ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+    if (ImGui::CollapsingHeader("Quadric")) {
+        ImGui::SliderFloat("A", &quadric.A, -10.0f, 10.f);
+        ImGui::SliderFloat("B", &quadric.B, -10.0f, 10.f);
+        ImGui::SliderFloat("C", &quadric.C, -10.0f, 10.f);
+        ImGui::SliderFloat("D", &quadric.D, -10.0f, 10.f);
+        ImGui::SliderFloat("E", &quadric.E, -10.0f, 10.f);
+        ImGui::SliderFloat("F", &quadric.F, -10.0f, 10.f);
+        ImGui::SliderFloat("G", &quadric.G, -10.0f, 10.f);
+        ImGui::SliderFloat("H", &quadric.H, -10.0f, 10.f);
+        ImGui::SliderFloat("I", &quadric.I, -10.0f, 10.f);
+        ImGui::SliderFloat("J", &quadric.J, -10.0f, 10.f);
+    }
+
     ImGui::End();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -257,26 +271,6 @@ void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, in
             else
                 gizmo_mesh_space = ImGuizmo::LOCAL;
         } break;
-
-        case GLFW_KEY_I:
-        case GLFW_KEY_J:
-        case GLFW_KEY_K:
-        case GLFW_KEY_L:
-        case GLFW_KEY_U:
-        case GLFW_KEY_O:
-            if (rend.options.enable_probe) {
-                // Probe movement
-                float speed = 0.002f;
-                if (mods & GLFW_MOD_SHIFT) speed *= 5.f;
-                if (key == GLFW_KEY_J || key == GLFW_KEY_K ||
-                    key == GLFW_KEY_U)
-                    speed = -speed;
-                int dim = (key == GLFW_KEY_J || key == GLFW_KEY_L)   ? 0
-                          : (key == GLFW_KEY_I || key == GLFW_KEY_K) ? 1
-                                                                     : 2;
-                rend.options.probe[dim] += speed;
-            }
-            break;
 
         case GLFW_KEY_MINUS:
             cam.fx *= 0.99f;
@@ -455,7 +449,6 @@ int main(int argc, char* argv[]) {
             rend.camera.fx = fx;
         }
 
-        rend.options = internal::render_options_from_args(args);
         auto cen = args["center"].as<std::vector<float>>();
         rend.camera.center = glm::vec3(cen[0], cen[1], cen[2]);
         auto origin = args["origin"].as<std::vector<float>>();

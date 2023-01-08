@@ -75,14 +75,17 @@ struct RenderUniforms {
         GLint reso;
         GLint center;
     } cam;
+
+    struct {
+        GLint shape;
+    } qua;
 };
 
 }  // namespace
 
 struct VolumeRenderer::Impl {
-    Impl(Camera& camera, RenderOptions& options, std::vector<Mesh>& meshes,
-         int max_tries = 4)
-        : camera(camera), options(options), meshes(meshes) {
+    Impl(Camera& camera, Quadric& quadric)
+        : camera(camera), quadric(quadric) {
         start();
     }
 
@@ -91,25 +94,26 @@ struct VolumeRenderer::Impl {
     }
 
     void start() {
-        if (started_) return;
+        if (started) return;
         quad_init();
         shader_init();
-        started_ = true;
+        started = true;
     }
 
     void render() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // ? what is bound, 0 ?
-        if (!started_) return;
+        if (!started) return;
         camera.update();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glUseProgram(program);  // using tree shader
 
-        // FIXME reduce uniform transfers?
         glUniformMatrix4x3fv(u.cam.c2w, 1, GL_FALSE, glm::value_ptr(camera.c2w));
-        glUniformMatrix4fv(u.cam.w2c, 1, GL_FALSE, glm::value_ptr(camera.w2c));        // loading camera w2c to GPU
-        glUniformMatrix4fv(u.cam.K, 1, GL_FALSE, glm::value_ptr(camera.K));            // loading camera K
-        glUniformMatrix4fv(u.cam.inv_K, 1, GL_FALSE, glm::value_ptr(camera.inv_K));    // loading camera inv_K
-        glUniformMatrix4fv(u.cam.center, 1, GL_FALSE, glm::value_ptr(camera.center));  // loading camera inv_K
+        glUniformMatrix4fv(u.cam.w2c, 1, GL_FALSE, glm::value_ptr(camera.w2c));      // loading camera w2c to GPU
+        glUniformMatrix4fv(u.cam.K, 1, GL_FALSE, glm::value_ptr(camera.K));          // loading camera K
+        glUniformMatrix4fv(u.cam.inv_K, 1, GL_FALSE, glm::value_ptr(camera.inv_K));  // loading camera inv_K
+
+        glUniformMatrix4fv(u.qua.shape, 1, GL_FALSE, glm::value_ptr(quadric.Q()));  // loading camera inv_K
+        glUniform3fv(u.cam.center, 1, glm::value_ptr(camera.center));               // loading camera inv_K
 
         glUniform2f(u.cam.focal, camera.fx, camera.fy);
         glUniform2f(u.cam.reso, (float)camera.width, (float)camera.height);
@@ -117,14 +121,6 @@ struct VolumeRenderer::Impl {
         glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
         glBindVertexArray(0);
     }
-
-    void set(N3Tree& tree) {}
-
-    void set(Human& human) {}
-
-    void maybe_gen_wire(int depth) {}
-
-    void clear() { this->tree = nullptr; }
 
     void resize(const int width, const int height) {
         if (camera.width == width && camera.height == height) return;
@@ -134,17 +130,7 @@ struct VolumeRenderer::Impl {
         glViewport(0, 0, width, height);
     }
 
-    Human* get_human() { return human; }
-
    private:
-    void auto_size_2d(size_t size, size_t& width, size_t& height, int base_dim = 1) {}
-
-    void upload_data() {}
-
-    void upload_child_links() {}
-
-    void upload_tree_spec() {}
-
     void shader_init() {
         program = create_shader_program(GUIDE_MESH_VERT_SHADER_SRC, RT_FRAG_SRC);
         u.cam.c2w = glGetUniformLocation(program, "cam.c2w");
@@ -154,6 +140,7 @@ struct VolumeRenderer::Impl {
         u.cam.center = glGetUniformLocation(program, "cam.center");
         u.cam.focal = glGetUniformLocation(program, "cam.focal");
         u.cam.reso = glGetUniformLocation(program, "cam.reso");
+        u.qua.shape = glGetUniformLocation(program, "qua.shape");
     }
 
     void quad_init() {
@@ -178,49 +165,21 @@ struct VolumeRenderer::Impl {
     }
 
     Camera& camera;
-    RenderOptions& options;
-
-    N3Tree* tree;               // the actual volume rendering tree
-    Human* human;               // the guide mesh for the volume renderer
-    std::vector<Mesh>& meshes;  // meshed to render on screen
-
-    GLuint program = -1;                                        // volume rendering ray casting shader program
-    GLuint tex_tree_data = -1, tex_tree_child, tex_tree_extra;  // index of tree data texture location
+    Quadric& quadric;
+    GLuint program = -1;  // volume rendering ray casting shader program
     GLuint vao_quad;
     GLuint vbo_quad;
-    GLint tex_max_size;
-
-    Mesh probe_, wire_;         // special meshes
-    int last_wire_depth_ = -1;  // The depth level of the octree wireframe; -1 = not yet generated
-
-    // TODO: use a render buffer for depth buffer
-    // TODO: rename tex_mesh_depth to a more consistent name
-    GLuint
-        fb,                  // frame buffer
-        tex_mesh_color,      // mesh pass color buffer
-        tex_mesh_depth,      // mesh pass camera t buffer
-        tex_mesh_depth_buf;  // mesh pass depth buffer
 
     std::string shader_fname = "shaders/rt.frag";
 
-    RenderUniforms u;       // uniform value in the shader
-    bool started_ = false;  // whether the program (globally) has been started, can render now
+    RenderUniforms u;      // uniform value in the shader
+    bool started = false;  // whether the program (globally) has been started, can render now
 };
 
-VolumeRenderer::VolumeRenderer() : impl_(std::make_unique<Impl>(camera, options, meshes)) {}
-
+VolumeRenderer::VolumeRenderer() : impl(std::make_unique<Impl>(camera, quadric)) {}
 VolumeRenderer::~VolumeRenderer() {}
-
-void VolumeRenderer::render() { impl_->render(); }
-
-void VolumeRenderer::set(N3Tree& tree) { impl_->set(tree); }
-void VolumeRenderer::set(Human& human) { impl_->set(human); }
-Human* VolumeRenderer::get_human() { return impl_->get_human(); }
-void VolumeRenderer::clear() { impl_->clear(); }
-
-void VolumeRenderer::resize(int width, int height) {
-    impl_->resize(width, height);
-}
+void VolumeRenderer::render() { impl->render(); }
+void VolumeRenderer::resize(int width, int height) { impl->resize(width, height); }
 const char* VolumeRenderer::get_backend() { return "Shader"; }
 
 }  // namespace volrend

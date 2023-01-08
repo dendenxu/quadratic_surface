@@ -17,57 +17,15 @@ struct Camera {
     vec3 center;
 };
 
+struct Quadric {
+    mat4x4 shape;
+};
+
 uniform Camera cam;
 
 // Ray Tracing Quadric shapes (with box constraint)
 // based on the paper: Ray Tracing Arbitrary Objects on the GPU, A. Wood et al
-const mat4 cylinder = mat4(
-    1.0, 0.0, 0.0, 0.0,
-    0.0, 1.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, -0.25);
-
-const mat4 sphere = mat4(
-    4.0, 0.0, 0.0, 0.0,
-    0.0, 4.0, 0.0, 0.0,
-    0.0, 0.0, 4.0, 0.0,
-    0.0, 0.0, 0.0, -1.0);
-
-const mat4 ellipticParaboloid = mat4(
-    4.0, 0.0, 0.0, 0.0,
-    0.0, 4.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 1.0,
-    0.0, 0.0, 1.0, 0.0);
-
-const mat4 hyperbolicParaboloid = mat4(
-    4.0, 0.0, 0.0, 0.0,
-    0.0, -4.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 1.0,
-    0.0, 0.0, 1.0, 0.0);
-
-const mat4 circularCone = mat4(
-    4.0, 0.0, 0.0, 0.0,
-    0.0, -4.0, 0.0, 0.0,
-    0.0, 0.0, 4.0, 0.0,
-    0.0, 0.0, 0.0, 0.0);
-
-const mat4 quadraticPlane = mat4(
-    1.0, 0.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 0.0,
-    0.0, 0.0, 1.0, 0.0,
-    0.0, 1.0, 0.0, 0.0);
-
-const mat4 hyperbolicPlane = mat4(
-    1.0, 0.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 2.0,
-    0.0, 0.0, 0.0, 0.0,
-    0.0, 2.0, 0.0, 0.0);
-
-const mat4 intersectingPlanes = mat4(
-    0.0, 1.0, 0.0, 0.0,
-    1.0, 0.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 0.0,
-    0.0, 0.0, 0.0, 0.0);
+uniform Quadric qua;
 
 const float EPSILON = 0.000001;
 
@@ -77,9 +35,7 @@ bool getPointAtTime(in float t, in vec4 ro, in vec4 rd, out vec3 point) {
     if (t < 0.0) {
         return false;
     }
-
     point = ro.xyz + t * rd.xyz;
-
     // constrain to a box
     return all(greaterThanEqual(point, vec3(-0.5 - EPSILON))) && all(lessThanEqual(point, vec3(0.5 + EPSILON)));
 }
@@ -190,7 +146,7 @@ void main() {
 
             // quadrics
             vec3 pixel = vec3(0.0);
-            pixel += draw_quadric(hyperbolicParaboloid, new_pos, new_dir);
+            pixel += draw_quadric(qua.shape, new_pos, new_dir);
             result += clamp(pixel, 0.0, 1.0);
         }
     }
