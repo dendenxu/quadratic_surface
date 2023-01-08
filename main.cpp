@@ -121,51 +121,50 @@ void draw_imgui(VolumeRenderer& rend
 
     // Begin window
     ImGui::Begin(title);
-    static ImGui::FileBrowser open_npz_guide_dialog(
-        ImGuiFileBrowserFlags_MultipleSelection);
-    if (open_npz_guide_dialog.GetTitle().empty()) {
-        open_npz_guide_dialog.SetTypeFilters({".npz"});
-        open_npz_guide_dialog.SetTitle("Load guide mesh NPZ");
-    }
-    static ImGui::FileBrowser open_npz_poses_dialog(
-        ImGuiFileBrowserFlags_MultipleSelection);
-    if (open_npz_poses_dialog.GetTitle().empty()) {
-        open_npz_poses_dialog.SetTypeFilters({".npz"});
-        open_npz_poses_dialog.SetTitle("Load human poses NPZ");
-    }
-    static ImGui::FileBrowser open_obj_mesh_dialog(
-        ImGuiFileBrowserFlags_MultipleSelection);
-    if (open_obj_mesh_dialog.GetTitle().empty()) {
-        open_obj_mesh_dialog.SetTypeFilters({".obj"});
-        open_obj_mesh_dialog.SetTitle("Load basic triangle OBJ");
-    }
-    static ImGui::FileBrowser open_tree_dialog,
-        save_screenshot_dialog(ImGuiFileBrowserFlags_EnterNewFilename);
-    if (open_tree_dialog.GetTitle().empty()) {
-        open_tree_dialog.SetTypeFilters({".npz"});
-        open_tree_dialog.SetTitle("Load N3Tree npz from svox");
-    }
+    // static ImGui::FileBrowser open_npz_guide_dialog(
+    //     ImGuiFileBrowserFlags_MultipleSelection);
+    // if (open_npz_guide_dialog.GetTitle().empty()) {
+    //     open_npz_guide_dialog.SetTypeFilters({".npz"});
+    //     open_npz_guide_dialog.SetTitle("Load guide mesh NPZ");
+    // }
+    // static ImGui::FileBrowser open_npz_poses_dialog(
+    //     ImGuiFileBrowserFlags_MultipleSelection);
+    // if (open_npz_poses_dialog.GetTitle().empty()) {
+    //     open_npz_poses_dialog.SetTypeFilters({".npz"});
+    //     open_npz_poses_dialog.SetTitle("Load human poses NPZ");
+    // }
+    // static ImGui::FileBrowser open_obj_mesh_dialog(
+    //     ImGuiFileBrowserFlags_MultipleSelection);
+    // if (open_obj_mesh_dialog.GetTitle().empty()) {
+    //     open_obj_mesh_dialog.SetTypeFilters({".obj"});
+    //     open_obj_mesh_dialog.SetTitle("Load basic triangle OBJ");
+    // }
+    static ImGui::FileBrowser save_screenshot_dialog(ImGuiFileBrowserFlags_EnterNewFilename);
+    // if (open_tree_dialog.GetTitle().empty()) {
+    //     open_tree_dialog.SetTypeFilters({".npz"});
+    //     open_tree_dialog.SetTitle("Load N3Tree npz from svox");
+    // }
     if (save_screenshot_dialog.GetTitle().empty()) {
         save_screenshot_dialog.SetTypeFilters({".png"});
         save_screenshot_dialog.SetTitle("Save screenshot (png)");
     }
 
-    if (ImGui::Button("Open Tree")) {
-        open_tree_dialog.Open();
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Load Guide Mesh")) {
-        open_npz_guide_dialog.Open();
-    }
+    // if (ImGui::Button("Open Tree")) {
+    //     open_tree_dialog.Open();
+    // }
+    // ImGui::SameLine();
+    // if (ImGui::Button("Load Guide Mesh")) {
+    //     open_npz_guide_dialog.Open();
+    // }
     // if (human.verts.size()) {
     //     ImGui::SameLine();
     //     if (ImGui::Button("Load Human Poses")) {
     //         open_npz_poses_dialog.Open();
     //     }
     // }
-    if (ImGui::Button("Save Screenshot")) {
-        save_screenshot_dialog.Open();
-    }
+    // if (ImGui::Button("Save Screenshot")) {
+    //     save_screenshot_dialog.Open();
+    // }
 
     // open_tree_dialog.Display();
     // if (open_tree_dialog.HasSelected()) {
@@ -334,211 +333,211 @@ void draw_imgui(VolumeRenderer& rend
     //         }
     //     }
 
-    ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-    if (ImGui::CollapsingHeader("Manipulation")) {
-        static std::vector<glm::mat4> gizmo_mesh_trans;
-        gizmo_mesh_trans.resize(rend.meshes.size());
+    // ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+    // if (ImGui::CollapsingHeader("Manipulation")) {
+    //     static std::vector<glm::mat4> gizmo_mesh_trans;
+    //     gizmo_mesh_trans.resize(rend.meshes.size());
 
-        ImGui::TextUnformatted("gizmo op");
-        ImGui::SameLine();
-        ImGui::RadioButton("trans##giztrans", &gizmo_mesh_op,
-                           ImGuizmo::TRANSLATE);
-        ImGui::SameLine();
-        ImGui::RadioButton("rot##gizrot", &gizmo_mesh_op, ImGuizmo::ROTATE);
-        ImGui::SameLine();
-        ImGui::RadioButton("scale##gizscale", &gizmo_mesh_op,
-                           ImGuizmo::SCALE_Z);
+    //     ImGui::TextUnformatted("gizmo op");
+    //     ImGui::SameLine();
+    //     ImGui::RadioButton("trans##giztrans", &gizmo_mesh_op,
+    //                        ImGuizmo::TRANSLATE);
+    //     ImGui::SameLine();
+    //     ImGui::RadioButton("rot##gizrot", &gizmo_mesh_op, ImGuizmo::ROTATE);
+    //     ImGui::SameLine();
+    //     ImGui::RadioButton("scale##gizscale", &gizmo_mesh_op,
+    //                        ImGuizmo::SCALE_Z);
 
-        ImGui::TextUnformatted("gizmo space");
-        ImGui::SameLine();
-        ImGui::RadioButton("local##gizlocal", &gizmo_mesh_space,
-                           ImGuizmo::LOCAL);
-        ImGui::SameLine();
-        ImGui::RadioButton("world##gizworld", &gizmo_mesh_space,
-                           ImGuizmo::WORLD);
+    //     ImGui::TextUnformatted("gizmo space");
+    //     ImGui::SameLine();
+    //     ImGui::RadioButton("local##gizlocal", &gizmo_mesh_space,
+    //                        ImGuizmo::LOCAL);
+    //     ImGui::SameLine();
+    //     ImGui::RadioButton("world##gizworld", &gizmo_mesh_space,
+    //                        ImGuizmo::WORLD);
 
-        ImGui::BeginGroup();
-        std::vector<int> meshes_to_del;
-        for (int i = 0; i < (int)rend.meshes.size(); ++i) {
-            auto& mesh = rend.meshes[i];
-            if (ImGui::TreeNode(mesh.name.c_str())) {
-                if (mesh.visible) {
-                    glm::mat4& gizmo_trans = gizmo_mesh_trans[i];
-                    gizmo_trans = mesh.transform_;
-                    if (gizmo_mesh_op == ImGuizmo::SCALE_Z) {
-                        glm::mat4 tmp(1);
-                        tmp[3] = gizmo_trans[3];
-                        gizmo_trans = tmp;
-                    }
-                    ImGuizmo::SetID(i + 1);
-                    if (ImGuizmo::Manipulate(glm::value_ptr(w2c),
-                                             glm::value_ptr(camera_persp_prj),
-                                             (ImGuizmo::OPERATION)gizmo_mesh_op,
-                                             (ImGuizmo::MODE)gizmo_mesh_space,
-                                             glm::value_ptr(gizmo_trans), NULL,
-                                             NULL, NULL, NULL)) {
-                        if (gizmo_mesh_op == ImGuizmo::ROTATE) {
-                            glm::quat rot_q = glm::quat_cast(
-                                glm::mat3(gizmo_trans) / mesh.scale);
-                            mesh.rotation =
-                                glm::axis(rot_q) * glm::angle(rot_q);
-                        } else if (gizmo_mesh_op == ImGuizmo::SCALE_Z) {
-                            mesh.scale *= gizmo_trans[2][2] /
-                                          mesh.transform_[2][2];  // max_scale;
-                        }
-                        mesh.translation = gizmo_trans[3];
-                    }
-                }
-                ImGui::PushItemWidth(230);
-                ImGui::InputFloat3("trans", glm::value_ptr(mesh.translation));
-                ImGui::InputFloat3("rot", glm::value_ptr(mesh.rotation));
-                ImGui::InputFloat("scale", &mesh.scale);
-                ImGui::PopItemWidth();
-                ImGui::Checkbox("visible", &mesh.visible);
-                ImGui::SameLine();
-                ImGui::Checkbox("unlit", &mesh.unlit);
-                ImGui::SameLine();
-                if (ImGui::Button("delete")) meshes_to_del.push_back(i);
+    // ImGui::BeginGroup();
+    // std::vector<int> meshes_to_del;
+    // for (int i = 0; i < (int)rend.meshes.size(); ++i) {
+    //     auto& mesh = rend.meshes[i];
+    //     if (ImGui::TreeNode(mesh.name.c_str())) {
+    //         if (mesh.visible) {
+    //             glm::mat4& gizmo_trans = gizmo_mesh_trans[i];
+    //             gizmo_trans = mesh.transform_;
+    //             if (gizmo_mesh_op == ImGuizmo::SCALE_Z) {
+    //                 glm::mat4 tmp(1);
+    //                 tmp[3] = gizmo_trans[3];
+    //                 gizmo_trans = tmp;
+    //             }
+    //             ImGuizmo::SetID(i + 1);
+    //             if (ImGuizmo::Manipulate(glm::value_ptr(w2c),
+    //                                      glm::value_ptr(camera_persp_prj),
+    //                                      (ImGuizmo::OPERATION)gizmo_mesh_op,
+    //                                      (ImGuizmo::MODE)gizmo_mesh_space,
+    //                                      glm::value_ptr(gizmo_trans), NULL,
+    //                                      NULL, NULL, NULL)) {
+    //                 if (gizmo_mesh_op == ImGuizmo::ROTATE) {
+    //                     glm::quat rot_q = glm::quat_cast(
+    //                         glm::mat3(gizmo_trans) / mesh.scale);
+    //                     mesh.rotation =
+    //                         glm::axis(rot_q) * glm::angle(rot_q);
+    //                 } else if (gizmo_mesh_op == ImGuizmo::SCALE_Z) {
+    //                     mesh.scale *= gizmo_trans[2][2] /
+    //                                   mesh.transform_[2][2];  // max_scale;
+    //                 }
+    //                 mesh.translation = gizmo_trans[3];
+    //             }
+    //         }
+    //         ImGui::PushItemWidth(230);
+    //         ImGui::InputFloat3("trans", glm::value_ptr(mesh.translation));
+    //         ImGui::InputFloat3("rot", glm::value_ptr(mesh.rotation));
+    //         ImGui::InputFloat("scale", &mesh.scale);
+    //         ImGui::PopItemWidth();
+    //         ImGui::Checkbox("visible", &mesh.visible);
+    //         ImGui::SameLine();
+    //         ImGui::Checkbox("unlit", &mesh.unlit);
+    //         ImGui::SameLine();
+    //         if (ImGui::Button("delete")) meshes_to_del.push_back(i);
 
-                ImGui::TreePop();
-            }
-        }
+    //         ImGui::TreePop();
+    //     }
+    // }
 
-        if (meshes_to_del.size()) {
-            int j = 0;
-            std::vector<Mesh> tmp;
-            tmp.reserve(rend.meshes.size() - meshes_to_del.size());
-            for (int i = 0; i < rend.meshes.size(); ++i) {
-                if (i == meshes_to_del[j]) {
-                    ++j;
-                    continue;
-                }
-                tmp.push_back(std::move(rend.meshes[i]));
-            }
-            rend.meshes.swap(tmp);
-        }
-        ImGui::EndGroup();
-        if (ImGui::Button("Sphere##addsphere")) {
-            static int sphereid = 0;
-            {
-                Mesh sph = Mesh::Sphere();
-                sph.scale = 0.1f;
-                sph.translation[2] = 1.0f;
-                sph.update();
-                if (sphereid) sph.name = sph.name + std::to_string(sphereid);
-                ++sphereid;
-                rend.meshes.push_back(std::move(sph));
-            }
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Cube##addcube")) {
-            static int cubeid = 0;
-            {
-                Mesh cube = Mesh::Cube();
-                cube.scale = 0.2f;
-                cube.translation[2] = 1.0f;
-                cube.update();
-                if (cubeid) cube.name = cube.name + std::to_string(cubeid);
-                ++cubeid;
-                rend.meshes.push_back(std::move(cube));
-            }
-        }
-        // ImGui::SameLine();
-        // if (ImGui::Button("Latti##addlattice")) {
-        //     static int lattid = 0;
-        //     {
-        //         Mesh latt = Mesh::Lattice();
-        //         if (tree.N > 0) {
-        //             latt.scale =
-        //                 1.f / std::min(std::min(tree.scale[0], tree.scale[1]),
-        //                                tree.scale[2]);
-        //             for (int i = 0; i < 3; ++i) {
-        //                 latt.translation[i] =
-        //                     -1.f / tree.scale[0] * tree.offset[0];
-        //             }
-        //         }
-        //         latt.update();
-        //         if (lattid) latt.name = latt.name + std::to_string(lattid);
-        //         ++lattid;
-        //         rend.meshes.push_back(std::move(latt));
-        //     }
-        // }
-        // ImGui::SameLine();
-        // if (ImGui::Button("Load OBJ")) {
-        //     open_obj_mesh_dialog.Open();
-        // }
-        // ImGui::SameLine();
-        // if (ImGui::Button("Clear All")) {
-        //     rend.meshes.clear();
-        // }
+    // if (meshes_to_del.size()) {
+    //     int j = 0;
+    //     std::vector<Mesh> tmp;
+    //     tmp.reserve(rend.meshes.size() - meshes_to_del.size());
+    //     for (int i = 0; i < rend.meshes.size(); ++i) {
+    //         if (i == meshes_to_del[j]) {
+    //             ++j;
+    //             continue;
+    //         }
+    //         tmp.push_back(std::move(rend.meshes[i]));
+    //     }
+    //     rend.meshes.swap(tmp);
+    // }
+    // ImGui::EndGroup();
+    // if (ImGui::Button("Sphere##addsphere")) {
+    //     static int sphereid = 0;
+    //     {
+    //         Mesh sph = Mesh::Sphere();
+    //         sph.scale = 0.1f;
+    //         sph.translation[2] = 1.0f;
+    //         sph.update();
+    //         if (sphereid) sph.name = sph.name + std::to_string(sphereid);
+    //         ++sphereid;
+    //         rend.meshes.push_back(std::move(sph));
+    //     }
+    // }
+    // ImGui::SameLine();
+    // if (ImGui::Button("Cube##addcube")) {
+    //     static int cubeid = 0;
+    //     {
+    //         Mesh cube = Mesh::Cube();
+    //         cube.scale = 0.2f;
+    //         cube.translation[2] = 1.0f;
+    //         cube.update();
+    //         if (cubeid) cube.name = cube.name + std::to_string(cubeid);
+    //         ++cubeid;
+    //         rend.meshes.push_back(std::move(cube));
+    //     }
+    // }
+    // ImGui::SameLine();
+    // if (ImGui::Button("Latti##addlattice")) {
+    //     static int lattid = 0;
+    //     {
+    //         Mesh latt = Mesh::Lattice();
+    //         if (tree.N > 0) {
+    //             latt.scale =
+    //                 1.f / std::min(std::min(tree.scale[0], tree.scale[1]),
+    //                                tree.scale[2]);
+    //             for (int i = 0; i < 3; ++i) {
+    //                 latt.translation[i] =
+    //                     -1.f / tree.scale[0] * tree.offset[0];
+    //             }
+    //         }
+    //         latt.update();
+    //         if (lattid) latt.name = latt.name + std::to_string(lattid);
+    //         ++lattid;
+    //         rend.meshes.push_back(std::move(latt));
+    //     }
+    // }
+    // ImGui::SameLine();
+    // if (ImGui::Button("Load OBJ")) {
+    //     open_obj_mesh_dialog.Open();
+    // }
+    // ImGui::SameLine();
+    // if (ImGui::Button("Clear All")) {
+    //     rend.meshes.clear();
+    // }
 
-        // // #ifdef VOLREND_CUDA
-        // if (tree.capacity) {
-        //     ImGui::BeginGroup();
-        //     ImGui::Checkbox("Show Template NeRF",
-        //                     &rend.options.show_template);
-        //     ImGui::Checkbox("Enable Lumisphere Probe",
-        //                     &rend.options.enable_probe);
-        //     if (rend.options.enable_probe) {
-        //         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-        //         if (ImGui::TreeNode("Probe")) {
-        //             static glm::mat4 probe_trans;
-        //             static bool show_probe_gizmo = true;
-        //             float* probe = rend.options.probe;
-        //             probe_trans =
-        //                 glm::translate(glm::mat4(1.f),
-        //                                glm::vec3(probe[0], probe[1], probe[2]));
+    // // #ifdef VOLREND_CUDA
+    // if (tree.capacity) {
+    //     ImGui::BeginGroup();
+    //     ImGui::Checkbox("Show Template NeRF",
+    //                     &rend.options.show_template);
+    //     ImGui::Checkbox("Enable Lumisphere Probe",
+    //                     &rend.options.enable_probe);
+    //     if (rend.options.enable_probe) {
+    //         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+    //         if (ImGui::TreeNode("Probe")) {
+    //             static glm::mat4 probe_trans;
+    //             static bool show_probe_gizmo = true;
+    //             float* probe = rend.options.probe;
+    //             probe_trans =
+    //                 glm::translate(glm::mat4(1.f),
+    //                                glm::vec3(probe[0], probe[1], probe[2]));
 
-        //             ImGui::Checkbox("Show gizmo", &show_probe_gizmo);
-        //             if (show_probe_gizmo) {
-        //                 ImGuizmo::SetID(0);
-        //                 if (ImGuizmo::Manipulate(
-        //                         glm::value_ptr(w2c),
-        //                         glm::value_ptr(camera_persp_prj),
-        //                         ImGuizmo::TRANSLATE, ImGuizmo::LOCAL,
-        //                         glm::value_ptr(probe_trans), NULL, NULL, NULL,
-        //                         NULL)) {
-        //                     for (int i = 0; i < 3; ++i)
-        //                         probe[i] = probe_trans[3][i];
-        //                 }
-        //             }
-        //             ImGui::InputFloat3("probe", probe);
-        //             ImGui::SliderInt("probe_win_sz",
-        //                              &rend.options.probe_disp_size, 50, 800);
-        //             ImGui::TreePop();
-        //         }
-        //     }
-        //     ImGui::EndGroup();
-        // }
-        // // #endif
-    }
-    open_obj_mesh_dialog.Display();
-    if (open_obj_mesh_dialog.HasSelected()) {
-        // Load mesh
-        auto sels = open_obj_mesh_dialog.GetMultiSelected();
-        for (auto& fpath : sels) {
-            const std::string path = fpath.string();
-            printf("Load OBJ: %s\n", path.c_str());
-            Mesh tmp = Mesh::load_basic_obj(path);
-            if (tmp.vert.size()) {
-                // Auto offset
-                std::ifstream ifs(path + ".offs");
-                if (ifs) {
-                    ifs >> tmp.translation.x >> tmp.translation.y >>
-                        tmp.translation.z;
-                    if (ifs) {
-                        ifs >> tmp.scale;
-                    }
-                }
-                tmp.update();
-                rend.meshes.push_back(std::move(tmp));
-                puts("Load success\n");
-            } else {
-                puts("Load failed\n");
-            }
-        }
-        open_obj_mesh_dialog.ClearSelected();
-    }
+    //             ImGui::Checkbox("Show gizmo", &show_probe_gizmo);
+    //             if (show_probe_gizmo) {
+    //                 ImGuizmo::SetID(0);
+    //                 if (ImGuizmo::Manipulate(
+    //                         glm::value_ptr(w2c),
+    //                         glm::value_ptr(camera_persp_prj),
+    //                         ImGuizmo::TRANSLATE, ImGuizmo::LOCAL,
+    //                         glm::value_ptr(probe_trans), NULL, NULL, NULL,
+    //                         NULL)) {
+    //                     for (int i = 0; i < 3; ++i)
+    //                         probe[i] = probe_trans[3][i];
+    //                 }
+    //             }
+    //             ImGui::InputFloat3("probe", probe);
+    //             ImGui::SliderInt("probe_win_sz",
+    //                              &rend.options.probe_disp_size, 50, 800);
+    //             ImGui::TreePop();
+    //         }
+    //     }
+    //     ImGui::EndGroup();
+    // }
+    // // #endif
+    // }
+    // open_obj_mesh_dialog.Display();
+    // if (open_obj_mesh_dialog.HasSelected()) {
+    //     // Load mesh
+    //     auto sels = open_obj_mesh_dialog.GetMultiSelected();
+    //     for (auto& fpath : sels) {
+    //         const std::string path = fpath.string();
+    //         printf("Load OBJ: %s\n", path.c_str());
+    //         Mesh tmp = Mesh::load_basic_obj(path);
+    //         if (tmp.vert.size()) {
+    //             // Auto offset
+    //             std::ifstream ifs(path + ".offs");
+    //             if (ifs) {
+    //                 ifs >> tmp.translation.x >> tmp.translation.y >>
+    //                     tmp.translation.z;
+    //                 if (ifs) {
+    //                     ifs >> tmp.scale;
+    //                 }
+    //             }
+    //             tmp.update();
+    //             rend.meshes.push_back(std::move(tmp));
+    //             puts("Load success\n");
+    //         } else {
+    //             puts("Load failed\n");
+    //         }
+    //     }
+    //     open_obj_mesh_dialog.ClearSelected();
+    // }
 
     // open_npz_guide_dialog.Display();
     // if (open_npz_guide_dialog.HasSelected()) {
