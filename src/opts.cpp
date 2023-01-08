@@ -1,5 +1,4 @@
 #include "volrend/internal/opts.hpp"
-#include <cstdio>
 
 #include <cstdio>
 
@@ -41,30 +40,5 @@ cxxopts::ParseResult parse_options(cxxopts::Options& options, int argc, char* ar
     }
     return args;
 }
-
-RenderOptions render_options_from_args(cxxopts::ParseResult& args) {
-    RenderOptions options;
-    options.background_brightness = args["bg"].as<float>();
-#ifdef VOLREND_CUDA
-    if (args.count("grid")) {
-        options.show_grid = true;
-        options.grid_max_depth = args["grid"].as<int>();
-    }
-    if (args.count("probe")) {
-        options.enable_probe = true;
-        auto probe = args["probe"].as<std::vector<float>>();
-        if (probe.size() < 3) {
-            fprintf(stderr, "ERROR: --probe must be of format 'x,y,z'\n");
-        } else {
-            for (int i = 0; i < 3; ++i) options.probe[i] = probe[i];
-        }
-    }
-#endif
-    options.step_size = args["step_size"].as<float>();
-    options.stop_thresh = args["stop_thresh"].as<float>();
-    options.sigma_thresh = args["sigma_thresh"].as<float>();
-    return options;
-}
-
 }  // namespace internal
 }  // namespace volrend

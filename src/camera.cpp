@@ -7,8 +7,6 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/mat4x4.hpp>
 
-#include "volrend/cuda/common.cuh"
-
 namespace volrend {
 
 struct Camera::DragState {

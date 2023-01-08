@@ -3,11 +3,8 @@
 #include <memory>
 
 #include "volrend/camera.hpp"
-#include "volrend/human.hpp"
 #include "volrend/mesh.hpp"
 #include "volrend/quadric.hpp"
-#include "volrend/n3tree.hpp"
-#include "volrend/render_options.hpp"
 
 namespace volrend {
 // Volume renderer using CUDA or compute shader

@@ -12,7 +12,6 @@
 
 #include "volrend/internal/imwrite.hpp"
 #include "volrend/internal/opts.hpp"
-#include "volrend/n3tree.hpp"
 #include "volrend/renderer.hpp"
 
 // clang-format off
