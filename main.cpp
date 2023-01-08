@@ -112,7 +112,7 @@ void draw_imgui(VolumeRenderer& rend
     // END gizmo handling
 
     ImGui::SetNextWindowPos(ImVec2(20.f, 20.f), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(340.f, 800.f), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(340.f, 400.f), ImGuiCond_Once);
 
     static char title[128] = {0};
     if (title[0] == 0) {
@@ -241,6 +241,7 @@ void draw_imgui(VolumeRenderer& rend
             ImGui::InputFloat("fx", &cam.fx);
             ImGui::InputFloat("fy", &cam.fy);
         }
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
         if (ImGui::TreeNode("Directions")) {
             ImGui::InputFloat3("world_up", glm::value_ptr(world_up_tmp));
             ImGui::InputFloat3("back", glm::value_ptr(back_tmp));
@@ -250,6 +251,7 @@ void draw_imgui(VolumeRenderer& rend
             }
             ImGui::TreePop();
         }
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
         if (ImGui::TreeNode("Transform")) {
             ImGui::Checkbox("Lock Transform", &cam.lock_trans);
             ImGui::InputFloat3("x", &cam.transform[0][0]);
@@ -783,6 +785,8 @@ GLFWwindow* glfw_init(const int width, const int height) {
     }
 
     // ignore vsync for now
+    // in some G-Sync enabled applications, you may get a consistent 160 fps
+    // when it should actually have been a few thousands
     glfwSwapInterval(0);
 
     // only copy r/g/b
@@ -847,21 +851,12 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-    // N3Tree tree;
-    // bool init_loaded = false;
-    // if (args.count("file")) {
-    //     init_loaded = true;
-    //     tree.open(args["file"].as<std::string>());
-    // }
     int width = args["width"].as<int>(), height = args["height"].as<int>();
     float fx = args["fx"].as<float>();
     float fy = args["fy"].as<float>();
     bool nogui = args["nogui"].as<bool>();
 
     GLFWwindow* window = glfw_init(width, height);
-
-    // std::chrono::high_resolution_clock::time_point last_time = std::chrono::high_resolution_clock::now();
-
     {
         VolumeRenderer rend;
         if (fx > 0.f) {
@@ -869,18 +864,6 @@ int main(int argc, char* argv[]) {
         }
 
         rend.options = internal::render_options_from_args(args);
-        // if (init_loaded && tree.use_ndc) {
-        //     // Special inital coordinates for NDC
-        //     // (pick average camera)
-        //     rend.camera.center = glm::vec3(0);
-        //     rend.camera.origin = glm::vec3(0, 0, -3);
-        //     rend.camera.v_back = glm::vec3(0, 0, 1);
-        //     rend.camera.v_world_up = glm::vec3(0, 1, 0);
-        //     if (fx <= 0) {
-        //         rend.camera.fx = rend.camera.fy = tree.ndc_focal * 0.25f;
-        //     }
-        //     rend.camera.movement_speed = 0.1f;
-        // } else
         {
             auto cen = args["center"].as<std::vector<float>>();
             rend.camera.center = glm::vec3(cen[0], cen[1], cen[2]);
@@ -895,17 +878,7 @@ int main(int argc, char* argv[]) {
             rend.camera.fy = rend.camera.fx;
         }
 
-        // {
-        //     std::string drawlist_load_path = args["draw"].as<std::string>();
-        //     if (drawlist_load_path.size()) {
-        //         rend.meshes = Mesh::open_drawlist(drawlist_load_path);
-        //     }
-        // }
-
         glfwGetFramebufferSize(window, &width, &height);
-        // Human human;  // creation of human object involves some shader stuff, should be put behind glew init
-        // rend.set(human);
-        // rend.set(tree);
         rend.resize(width, height);
 
         // Set user pointer and callbacks
@@ -917,28 +890,10 @@ int main(int argc, char* argv[]) {
         glfwSetFramebufferSizeCallback(window, glfw_window_size_callback);
 
         while (!glfwWindowShouldClose(window)) {
-            // glEnable(GL_DEPTH_TEST);
-            // glEnable(GL_PROGRAM_POINT_SIZE);
-            // glPointSize(4.f);
+            glEnable(GL_DEPTH_TEST);
             glfw_update_title(window);
-
-            // if (play_animation) {
-            //     std::chrono::high_resolution_clock::time_point now_time = std::chrono::high_resolution_clock::now();
-            //     double ns = std::chrono::duration<double, std::nano>(now_time - last_time).count();
-            //     if (ns >= 1e9 / fps) {
-            //         last_time = now_time;
-            //         if (human.n_poses()) {
-            //             ++selected_pose %= human.n_poses();
-            //         } else {
-            //             selected_pose = 0;
-            //         }
-            //         human.select_pose(selected_pose);
-            //     }
-            // }
             rend.render();
-
             if (!nogui) draw_imgui(rend);
-
             glfwSwapBuffers(window);
             glFinish();
             glfwPollEvents();
