@@ -56,7 +56,8 @@ void marching_cubes(const vector3& lower, const vector3& upper,
 
     std::atomic<int> n_marched{0};
     auto progress = tlog::progress(numx * numy * numz);
-    ngp::ThreadPool{}.parallel_for<int>(0, numx, [&](int i) {
+    // ngp::ThreadPool{}.parallel_for<int>(0, numx, [&](int i) {
+    for (int i = 0; i < numx; ++i) {
         coord_type x = lower[0] + dx * i;
         coord_type x_dx = lower[0] + dx * (i + 1);
         const int i_mod_2 = i % 2;
@@ -184,11 +185,12 @@ void marching_cubes(const vector3& lower, const vector3& upper,
                 int* triangle_table_ptr = triangle_table[cubeindex];
                 for (int m = 0; tri = triangle_table_ptr[m], tri != -1; ++m)
                     polygons.push_back(indices[tri]);
-
-                progress.update(++n_marched);
             }
         }
-    });
+        n_marched = n_marched + numz * numy;
+        progress.update(n_marched);
+    }
+    // );
     tlog::success() << "Marching Cubes finished, n_vertices = " << vertices.size() << ", n_polygons = " << polygons.size() << "";
 }
 
