@@ -184,28 +184,28 @@ void main() {
     // https://www.shadertoy.com/view/fl3SDN
     // https://computergraphics.stackexchange.com/questions/5724/glsl-can-someone-explain-why-gl-fragcoord-xy-screensize-is-performed-and-for
 
-    // vec2 fcl_inv = 1.0 / vec2(cam.K[0].x, cam.K[1].y);     // inverse of K
-    vec2 fcl_inv = 1.0 / cam.reso;                         // inverse of K
-    vec2 pix_scr = gl_FragCoord.xy * fcl_inv * 2.0 - 1.0;  // screen space pixel
-    vec2 pix_stp = (1.0 * fcl_inv) / float(samples);       // super sampling substeps
+    // screen coordinate ray origin
+    float aspect_ratio = cam.reso.x / cam.reso.y;
+    vec3 ray_position = vec3(0.0, 0.0, -10.0);
+    // screen coordiante ray target
+    vec3 ray_target = vec3((gl_FragCoord.xy / cam.reso.xy) * 2.0 - 1.0, 1.0);
+    ray_target.y /= aspect_ratio;
 
-    // mat4 rot_mat = mat4(cam.c2w);
-    mat4 rot_mat = mat4(1.0);   // camera to world transform
-    vec3 ray_ori = cam.center;  // world space origin
-
+    vec2 ray_step = (1.0 / cam.reso.xy) / float(samples);
+    mat4 rot_matrix = mat4(cam.c2w);
     vec3 result = vec3(0.0);
     for (int y = 0; y < samples; y++) {
         for (int x = 0; x < samples; x++) {
-            vec2 pix_sub = pix_scr + pix_stp * vec2(x, y);      // subpixel
-            vec3 pix_cam = vec3(pix_sub, 1.0);                  // camera space pixel
-            vec3 pix_wld = vec3(rot_mat * vec4(pix_cam, 1.0));  // world space pixel
-            vec3 ray_dir = normalize(pix_wld - ray_ori);        // ray direction
+            vec3 ray_dir = normalize(ray_target + vec3(ray_step * vec2(x, y), 0.0) - ray_position);
+            vec4 new_dir = rot_matrix * vec4(ray_dir, 0.0);
+            vec4 new_pos = rot_matrix * vec4(ray_position, 1.0);
 
             // quadrics
             vec3 pixel = vec3(0.0);
-            pixel += draw_quadric(sphere, vec4(ray_ori, 1.0), vec4(ray_dir, 0.0));
+            pixel += draw_quadric(ellipticParaboloid, new_pos, new_dir);
             result += clamp(pixel, 0.0, 1.0);
         }
     }
+
     frag_color = vec4(result / float(samples * samples), 1.0);
 }
