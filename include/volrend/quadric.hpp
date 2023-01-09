@@ -35,6 +35,16 @@ struct Quadric {
     float H = 0.0f;
     float I = 1.0f;
     float J = 0.0f;
+    // float A = 4.0f;
+    // float B = 0.3f;
+    // float C = 5.6f;
+    // float D = 0.9f;
+    // float E = -4.0f;
+    // float F = -1.2f;
+    // float G = 1.2f;
+    // float H = 1.3f;
+    // float I = 1.9f;
+    // float J = -0.1f;
 
     float eps = 0.000001f;
     float box_size = 0.5f;
@@ -51,7 +61,7 @@ struct Quadric {
 
     float evaluate(float x, float y, float z) const {
         // evaluate the quadratic function at the given point
-        return A * x * x + 2 * B * x * y + 2 * C * x * z + 2 * D * x + E * y * y + 2 * F * y * z + G * y + H * z * z + 2 * I * z + J;
+        return A * x * x + 2 * B * x * y + 2 * C * x * z + 2 * D * x + E * y * y + 2 * F * y * z + 2 * G * y + H * z * z + 2 * I * z + J;
         // return glm::dot(glm::vec4(x, y, z, 1.0f), Q() * glm::vec4(x, y, z, 1.0f));
     }
 
