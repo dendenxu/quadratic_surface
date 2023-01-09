@@ -5,9 +5,7 @@
 #include <vector>
 
 #include "glm/mat4x4.hpp"
-#define MSH_PLY_IMPLEMENTATION
-#include "volrend/msh_ply.hpp"
-
+#include "volrend/happly.hpp"
 void estimate_normals(std::vector<float>& verts, const std::vector<unsigned int>& faces);
 
 namespace volrend {
@@ -102,8 +100,8 @@ struct Mesh {
     } TriMesh_t;
 
     void save_ply(const std::string& path) {
-        std::vector<std::array<float, 3>> trimesh_vertices;
-        std::vector<std::array<unsigned int, 3>> trimesh_faces;
+        std::vector<std::array<double, 3>> trimesh_vertices;
+        std::vector<std::vector<unsigned int>> trimesh_faces;
         for (int i = 0; i < n_verts(); i++) {
             trimesh_vertices.push_back({verts[i * VERT_SZ], verts[i * VERT_SZ + 1], verts[i * VERT_SZ + 2]});
         }
@@ -111,42 +109,15 @@ struct Mesh {
             trimesh_faces.push_back({faces[i * 3], faces[i * 3 + 1], faces[i * 3 + 2]});
         }
 
-        TriMesh_t trimesh{0};
-        trimesh.n_faces = n_faces();
-        trimesh.n_vertices = n_verts();
-        trimesh.vertices = trimesh_vertices.data();
-        trimesh.faces = trimesh_faces.data();
+        // Create an empty object
+        happly::PLYData plyOut;
 
-        msh_ply_desc_t descriptors[2];
-        const char* vertex_name[]{"x", "y", "z"};
-        descriptors[0].element_name = "vertex";
-        descriptors[0].property_names = vertex_name;
-        descriptors[0].num_properties = 3;
-        descriptors[0].data_type = MSH_PLY_FLOAT;
-        descriptors[0].data = &trimesh.vertices;
-        descriptors[0].data_count = &trimesh.n_vertices;
+        // Add mesh data (elements are created automatically)
+        plyOut.addVertexPositions(trimesh_vertices);
+        plyOut.addFaceIndices(trimesh_faces);
 
-        const char* face_name[]{"vertex_indices"};
-        descriptors[1].element_name = "face";
-        descriptors[1].property_names = face_name;
-        descriptors[1].num_properties = 1;
-        descriptors[1].data_type = MSH_PLY_INT32;
-        descriptors[1].list_type = MSH_PLY_UINT8;
-        descriptors[1].data = &trimesh.faces;
-        descriptors[1].data_count = &trimesh.n_faces;
-        descriptors[1].list_size_hint = 3;
-
-        // Create new ply file
-        msh_ply_t* ply_file = msh_ply_open(path.c_str(), "wb");
-        // Add descriptors to ply file
-        msh_ply_add_descriptor(ply_file, &descriptors[0]);
-        msh_ply_add_descriptor(ply_file, &descriptors[1]);
-
-        // Write data to disk
-        msh_ply_write(ply_file);
-
-        // Close ply file
-        msh_ply_close(ply_file);
+        // Write the object to file
+        plyOut.write(path, happly::DataFormat::Binary);
     }
 
    private:

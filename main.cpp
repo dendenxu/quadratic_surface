@@ -86,7 +86,7 @@ void draw_imgui(VolumeRenderer& rend
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGui::SetNextWindowPos(ImVec2(20.f, 20.f), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(400.f, 900.f), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(400.f, 1000.f), ImGuiCond_Once);
 
     static char title[128] = {0};
     if (title[0] == 0) {
@@ -95,24 +95,6 @@ void draw_imgui(VolumeRenderer& rend
 
     // Begin window
     ImGui::Begin(title);
-    static ImGui::FileBrowser save_ply_mesh_dialog(
-        ImGuiFileBrowserFlags_MultipleSelection);
-    if (save_ply_mesh_dialog.GetTitle().empty()) {
-        save_ply_mesh_dialog.SetTypeFilters({".ply"});
-        save_ply_mesh_dialog.SetTitle("Save basic triangle PLY");
-    }
-
-    save_ply_mesh_dialog.Display();
-    if (save_ply_mesh_dialog.HasSelected()) {
-        std::string path = save_ply_mesh_dialog.GetSelected().string();
-        save_ply_mesh_dialog.ClearSelected();
-        if (rend.quadric.mesh != nullptr) {
-            rend.quadric.mesh->save_ply(path);
-            tlog::success() << "PLY mesh saved to " << path;
-        } else {
-            tlog::error() << "Failed to save mesh... something wrong";
-        }
-    }
 
     ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
     if (ImGui::CollapsingHeader("Camera")) {
@@ -205,10 +187,13 @@ void draw_imgui(VolumeRenderer& rend
                 ImGui::Text("Vertices: %d", quadric.mesh->n_verts());
                 ImGui::Text("Triangles: %d", quadric.mesh->n_faces());
                 ImGui::Checkbox("Render Mesh", &quadric.render_mesh);
-                ImGui::SameLine();
+                static std::string path;
+                path.resize(256);  // filename buffer
                 if (ImGui::Button("Save PLY")) {
-                    save_ply_mesh_dialog.Open();
+                    quadric.mesh->save_ply(path);
                 }
+                // ImGui::SameLine();
+                ImGui::InputText("PLY Name", path.data(), 256);
             }
             ImGui::TreePop();
         }
