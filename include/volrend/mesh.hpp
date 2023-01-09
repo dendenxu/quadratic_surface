@@ -6,6 +6,7 @@
 
 #include "glm/mat4x4.hpp"
 #include "volrend/happly.hpp"
+#include "volrend/tinylogger.hpp"
 void estimate_normals(std::vector<float>& verts, const std::vector<unsigned int>& faces);
 
 namespace volrend {
@@ -100,6 +101,7 @@ struct Mesh {
     } TriMesh_t;
 
     void save_ply(const std::string& path) {
+        tlog::info() << "Saving PLY to " << path;
         std::vector<std::array<double, 3>> trimesh_vertices;
         std::vector<std::vector<unsigned int>> trimesh_faces;
         for (int i = 0; i < n_verts(); i++) {
@@ -118,6 +120,7 @@ struct Mesh {
 
         // Write the object to file
         plyOut.write(path, happly::DataFormat::Binary);
+        tlog::success() << "PLY saved to " << path;
     }
 
    private:

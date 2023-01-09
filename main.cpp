@@ -181,19 +181,25 @@ void draw_imgui(VolumeRenderer& rend
             if (ImGui::Button("Polygonize")) {
                 quadric.marching_cubes();
             }
-            ImGui::Text("Polygonization might take a while...");
-            ImGui::Text("See console for progress update...");
+            // ImGui::Text("Polygonization might take a while...");
+            // ImGui::Text("See console for progress update...");
             if (quadric.mesh != nullptr) {
-                ImGui::Text("Vertices: %d", quadric.mesh->n_verts());
-                ImGui::Text("Triangles: %d", quadric.mesh->n_faces());
-                ImGui::Checkbox("Render Mesh", &quadric.render_mesh);
-                static std::string path;
-                path.resize(256);  // filename buffer
+                ImGui::SameLine();
+                static std::string path = "qua.ply";
+                path.reserve(256);  // filename buffer
+
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
                 if (ImGui::Button("Save PLY")) {
                     quadric.mesh->save_ply(path);
                 }
-                // ImGui::SameLine();
+                ImGui::PopStyleColor(3);
+
                 ImGui::InputText("PLY Name", path.data(), 256);
+                ImGui::Text("Vertices: %d", quadric.mesh->n_verts());
+                ImGui::Text("Triangles: %d", quadric.mesh->n_faces());
+                ImGui::Checkbox("Render Mesh", &quadric.render_mesh);
             }
             ImGui::TreePop();
         }
