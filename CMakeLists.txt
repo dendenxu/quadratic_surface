@@ -24,33 +24,15 @@ set(VOLREND_VERSION ${VOLREND_VERSION_MAJOR}.${VOLREND_VERSION_MINOR}.${VOLREND_
 
 option(VOLREND_USE_SYSTEM_GLFW
     "Use system glfw rather than the included glfw submodule if available" ON)
-option(VOLREND_USE_CUDA "Use CUDA" ON)
 option(VOLREND_BUILD_INSTALL "Build the install target" ON)
 option(VOLREND_BUILD_PYTHON "Build Python bindings" OFF)
 option(VOLREND_USE_FFAST_MATH "Use -ffast-math" OFF)
+option(VOLREND_USE_CUDA "Use CUDA for rendering" OFF)
 
 set(CMAKE_CXX_STACK_SIZE "10000000")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-# CUDA
-set(_VOLREND_CUDA_ "// ")
-set(_VOLREND_USE_CUDA ${VOLREND_USE_CUDA})
-
-if(EMSCRIPTEN)
-    set(_VOLREND_USE_CUDA OFF)
-endif()
-
-if(_VOLREND_USE_CUDA)
-    set(_VOLREND_CUDA_ "")
-    set(CUDA_SEPARABLE_COMPILATION ON)
-    enable_language(CUDA)
-    message(STATUS "CUDA enabled")
-    set(CMAKE_CUDA_STANDARD 14)
-    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS}  -g -Xcudafe \"--display_error_number --diag_suppress=3057 --diag_suppress=3058 --diag_suppress=3059 --diag_suppress=3060\" -lineinfo")
-endif(_VOLREND_USE_CUDA)
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -81,11 +63,6 @@ elseif(MSVC)
     set(CMAKE_CXX_FLAGS_DEBUG "/MTd ${CMAKE_CXX_FLAGS_DEBUG}")
     set(CMAKE_CXX_FLAGS_RELEASE "/MT /GLT /Ox ${CMAKE_CXX_FLAGS_RELEASE}")
     set(CMAKE_C_FLAGS_DEBUG "/MTd ${CMAKE_C_FLAGS_DEBUG}")
-
-    if(_VOLREND_USE_CUDA)
-        set(CMAKE_CUDA_FLAGS_RELEASE "-Xcompiler=\"/MT\" ${CMAKE_CUDA_FLAGS_RELEASE}")
-    endif()
-
     set(CMAKE_C_FLAGS_RELEASE "/MT /GLT ${CMAKE_C_FLAGS_RELEASE}")
 
     message(STATUS "Updated\nCMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}\nCMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}\nCMAKE_C_FLAGS_DEBUG: ${CMAKE_C_FLAGS_DEBUG}\nCMAKE_C_FLAGS_RELEASE: ${CMAKE_C_FLAGS_RELEASE}")
@@ -133,23 +110,10 @@ file(GLOB VOLREND_SOURCES ${SRC_DIR}/*.cpp)
 file(GLOB VOLREND_PUBLIC_HEADERS ${INCLUDE_DIR}/volrend/*.hpp)
 file(GLOB VOLREND_PRIVATE_HEADERS ${INCLUDE_DIR}/volrend/internal/*.hpp)
 
-if(_VOLREND_USE_CUDA)
-    file(GLOB VOLREND_SOURCES_CUDA ${SRC_DIR}/cuda/*.cu)
-    file(GLOB VOLREND_CUDA_HEADERS
-        ${INCLUDE_DIR}/volrend/cuda/*.cuh
-        ${INCLUDE_DIR}/volrend/cuda/*.hpp)
-else(_VOLREND_USE_CUDA)
-    set(VOLREND_SOURCES_CUDA)
-    set(VOLREND_CUDA_HEADERS)
-endif(_VOLREND_USE_CUDA)
+set(VOLREND_SOURCES ${VOLREND_SOURCES})
+set(VOLREND_HEADERS ${VOLREND_PUBLIC_HEADERS} ${VOLREND_PRIVATE_HEADERS})
 
-set(VOLREND_SOURCES ${VOLREND_SOURCES} ${VOLREND_SOURCES_CUDA})
-set(VOLREND_HEADERS ${VOLREND_PUBLIC_HEADERS} ${VOLREND_PRIVATE_HEADERS}
-    ${VOLREND_CUDA_HEADERS})
-
-set(VOLREND_VENDOR_SOURCES
-    ${CNPY_DIR}/cnpy.cpp
-)
+set(VOLREND_VENDOR_SOURCES ${CNPY_DIR}/cnpy.cpp)
 
 if(NOT EMSCRIPTEN)
     set(VOLREND_VENDOR_SOURCES
@@ -218,46 +182,40 @@ include_directories(
     ${VENDOR_DIR}/misc
 )
 
-if(_VOLREND_USE_CUDA)
-    include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+find_package(OpenGL REQUIRED)
+set(DEPENDENCIES ${DEPENDENCIES} OpenGL::GL)
+
+set(WILL_USE_SYSTEM_GLFW ${VOLREND_USE_SYSTEM_GLFW})
+
+find_package(PkgConfig)
+
+if(NOT PkgConfig_FOUND)
+    set(WILL_USE_SYSTEM_GLFW OFF)
+else()
+    pkg_check_modules(GLFW glfw3)
+
+    if(NOT GLFW_FOUND)
+        set(WILL_USE_SYSTEM_GLFW OFF)
+    endif()
 endif()
 
-if(NOT EMSCRIPTEN)
-    find_package(OpenGL REQUIRED)
-    set(DEPENDENCIES ${DEPENDENCIES} OpenGL::GL)
+if(NOT WILL_USE_SYSTEM_GLFW)
+    message(STATUS "Using included glfw3 (in 3rdparty/)")
 
-    set(WILL_USE_SYSTEM_GLFW ${VOLREND_USE_SYSTEM_GLFW})
-
-    find_package(PkgConfig)
-
-    if(NOT PkgConfig_FOUND)
-        set(WILL_USE_SYSTEM_GLFW OFF)
-    else()
-        pkg_check_modules(GLFW glfw3)
-
-        if(NOT GLFW_FOUND)
-            set(WILL_USE_SYSTEM_GLFW OFF)
-        endif()
-    endif()
-
-    if(NOT WILL_USE_SYSTEM_GLFW)
-        message(STATUS "Using included glfw3 (in 3rdparty/)")
-
-        # Build GLFW
-        SET(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "GLFW example" FORCE)
-        SET(GLFW_BUILD_TESTS OFF CACHE BOOL "GLFW tests" FORCE)
-        SET(GLFW_BUILD_DOCS OFF CACHE BOOL "GLFW docs" FORCE)
-        SET(GLFW_INSTALL ${VOLREND_BUILD_INSTALL} CACHE BOOL "GLFW install" FORCE)
-        add_subdirectory(${GLFW_DIR})
-        set(DEPENDENCIES ${DEPENDENCIES} glfw)
-        include_directories("${GLFW_DIR}/include")
-    else()
-        message(STATUS "Using system glfw3")
-        set(DEPENDENCIES ${DEPENDENCIES} glfw)
-    endif()
+    # Build GLFW
+    SET(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "GLFW example" FORCE)
+    SET(GLFW_BUILD_TESTS OFF CACHE BOOL "GLFW tests" FORCE)
+    SET(GLFW_BUILD_DOCS OFF CACHE BOOL "GLFW docs" FORCE)
+    SET(GLFW_INSTALL ${VOLREND_BUILD_INSTALL} CACHE BOOL "GLFW install" FORCE)
+    add_subdirectory(${GLFW_DIR})
+    set(DEPENDENCIES ${DEPENDENCIES} glfw)
+    include_directories("${GLFW_DIR}/include")
+else()
+    message(STATUS "Using system glfw3")
+    set(DEPENDENCIES ${DEPENDENCIES} glfw)
+endif()
 
     find_package(Threads REQUIRED)
-endif(NOT EMSCRIPTEN)
 
 # create volrend.hpp
 set(COMMON_HPP_PATH "${PROJECT_BINARY_DIR}/include/volrend/common.hpp")
@@ -272,26 +230,21 @@ if(WIN32)
     set_target_properties(${PROJ_LIB_NAME} PROPERTIES OUTPUT_NAME "libvolrend")
 endif()
 
-if(_VOLREND_USE_CUDA)
-    set_target_properties(${PROJ_LIB_NAME}
-        PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-else(_VOLREND_USE_CUDA)
-    # Inline shader
-    set(SHADER_FILE "${PROJECT_SOURCE_DIR}/shaders/rt.frag")
-    set(SHADER_INLINED_FILE "${PROJECT_BINARY_DIR}/include/volrend/internal/rt_frag.inl")
-    add_custom_command(
-        OUTPUT ${SHADER_INLINED_FILE}
-        COMMAND ${CMAKE_COMMAND}
-        -DSHADER_FILE=${SHADER_FILE}
-        -DSHADER_NAME=RT_FRAG
-        -DOUTPUT=${SHADER_INLINED_FILE}
-        -P ${CMAKE_MODULE_PATH}/shader_inl.cmake
-        DEPENDS ${SHADER_FILE}
-        COMMENT "Inlining fragment shader"
-        VERBATIM)
-    add_custom_target(shader_inline ALL DEPENDS ${SHADER_INLINED_FILE})
-    add_dependencies(${PROJ_LIB_NAME} shader_inline)
-endif(_VOLREND_USE_CUDA)
+# Inline shader
+set(SHADER_FILE "${PROJECT_SOURCE_DIR}/shaders/rt.frag")
+set(SHADER_INLINED_FILE "${PROJECT_BINARY_DIR}/include/volrend/internal/rt_frag.inl")
+add_custom_command(
+    OUTPUT ${SHADER_INLINED_FILE}
+    COMMAND ${CMAKE_COMMAND}
+    -DSHADER_FILE=${SHADER_FILE}
+    -DSHADER_NAME=RT_FRAG
+    -DOUTPUT=${SHADER_INLINED_FILE}
+    -P ${CMAKE_MODULE_PATH}/shader_inl.cmake
+    DEPENDS ${SHADER_FILE}
+    COMMENT "Inlining fragment shader"
+    VERBATIM)
+add_custom_target(shader_inline ALL DEPENDS ${SHADER_INLINED_FILE})
+add_dependencies(${PROJ_LIB_NAME} shader_inline)
 
 target_include_directories(
     ${PROJ_LIB_NAME} PUBLIC
@@ -358,15 +311,6 @@ macro(VOLREND_ADD_EXECUTABLE target_name output_name main_file)
     add_executable(${target_name} ${main_file})
     target_link_libraries(${target_name} ${PROJ_LIB_NAME})
     set_target_properties(${target_name} PROPERTIES OUTPUT_NAME ${output_name})
-
-    if(WIN32 AND _VOLREND_USE_CUDA)
-        set_target_properties(${target_name}
-            PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
-
-        if(MSVC)
-            set_property(TARGET ${target_name} APPEND PROPERTY LINK_FLAGS "/DEBUG /LTCG")
-        endif(MSVC)
-    endif(WIN32 AND _VOLREND_USE_CUDA)
 endmacro()
 
 VOLREND_ADD_EXECUTABLE(volrend_exe volrend main.cpp)

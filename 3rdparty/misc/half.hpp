@@ -28,10 +28,6 @@
 #ifndef HALF_HALF_HPP
 #define HALF_HALF_HPP
 
-#ifdef VOLREND_CUDA
-#include <cuda_fp16.h>
-#else
-
 /// Combined gcc version number.
 #define HALF_GNUC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 
@@ -3598,5 +3594,4 @@ struct hash<half>  //: unary_function<half,size_t>
 #undef HALF_POP_WARNINGS
 #endif
 
-#endif
 #endif
