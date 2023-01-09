@@ -37,7 +37,7 @@ struct Quadric {
     float J = 0.0f;
 
     float eps = 0.000001f;
-    float box_size = 0.25f;
+    float box_size = 0.5f;
     int samples = 4;
     int resolution = 512;  // marching cubes resolution
 
@@ -52,6 +52,7 @@ struct Quadric {
     float evaluate(float x, float y, float z) const {
         // evaluate the quadratic function at the given point
         return A * x * x + 2 * B * x * y + 2 * C * x * z + 2 * D * x + E * y * y + 2 * F * y * z + G * y + H * z * z + 2 * I * z + J;
+        // return glm::dot(glm::vec4(x, y, z, 1.0f), Q() * glm::vec4(x, y, z, 1.0f));
     }
 
     bool render_mesh = true;     // if render_mesh and loaded, render the triangle mesh instead

@@ -40,7 +40,7 @@ bool getPointAtTime(in float t, in vec4 ro, in vec4 rd, out vec3 point) {
     }
     point = ro.xyz + t * rd.xyz;
     // constrain to a box
-    return all(greaterThanEqual(point, vec3(-qua.box_size * 2 - qua.eps))) && all(lessThanEqual(point, vec3(qua.box_size * 2 + qua.eps)));
+    return all(greaterThanEqual(point, vec3(-qua.box_size - qua.eps))) && all(lessThanEqual(point, vec3(qua.box_size + qua.eps)));
 }
 
 // adapted from https://iquilezles.org/articles/intersectors
@@ -64,6 +64,7 @@ bool intersect_quadric(in mat4 shape, in vec4 ro, in vec4 rd, out vec3 point) {
     // quadratic equation
     float a = dot(rd, rda);
     float b = dot(ro, rda) + dot(rd, roa);
+    // float b = dot(ro, rda);
     float c = dot(ro, roa);
 
     if (abs(a) < qua.eps) {
@@ -75,6 +76,7 @@ bool intersect_quadric(in mat4 shape, in vec4 ro, in vec4 rd, out vec3 point) {
     }
 
     float square = b * b - 4.0 * a * c;
+    // float square = b * b - a * c;
 
     if (square < qua.eps) {
         return false;  // no hit
@@ -82,6 +84,7 @@ bool intersect_quadric(in mat4 shape, in vec4 ro, in vec4 rd, out vec3 point) {
 
     float temp = sqrt(square);
     float denom = 2.0 * a;
+    // float denom = a;
 
     float t1 = (-b - temp) / denom;
     float t2 = (-b + temp) / denom;
@@ -133,7 +136,7 @@ void main() {
 
     // screen coordinate ray origin
     float aspect_ratio = cam.reso.x / cam.reso.y;
-    vec3 ray_position = vec3(0.0, 0.0, 4.0);
+    vec3 ray_position = vec3(0.0, 0.0, 6.0);
     // screen coordiante ray target
     vec3 ray_target = vec3((gl_FragCoord.xy / cam.reso.xy) * 2.0 - 1.0, 1.0);
     ray_target.y /= aspect_ratio;
