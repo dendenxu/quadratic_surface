@@ -13,6 +13,7 @@
 #include "volrend/internal/imwrite.hpp"
 #include "volrend/internal/opts.hpp"
 #include "volrend/renderer.hpp"
+#include "volrend/tinylogger.hpp"
 
 // clang-format off
 // You know what? Just DO NOT CHANGE THIS INCLUDE ORDER
@@ -22,13 +23,7 @@
 #include "ImGuizmo.h"
 // clang-format on
 
-#ifndef __EMSCRIPTEN__
 #include "imfilebrowser.h"
-#endif
-
-#ifdef VOLREND_CUDA
-#include "volrend/cuda/common.cuh"
-#endif
 
 namespace volrend {
 
@@ -100,36 +95,22 @@ void draw_imgui(VolumeRenderer& rend
 
     // Begin window
     ImGui::Begin(title);
-    static ImGui::FileBrowser save_screenshot_dialog(ImGuiFileBrowserFlags_EnterNewFilename);
-    if (save_screenshot_dialog.GetTitle().empty()) {
-        save_screenshot_dialog.SetTypeFilters({".png"});
-        save_screenshot_dialog.SetTitle("Save screenshot (png)");
+    static ImGui::FileBrowser save_ply_mesh_dialog(
+        ImGuiFileBrowserFlags_MultipleSelection);
+    if (save_ply_mesh_dialog.GetTitle().empty()) {
+        save_ply_mesh_dialog.SetTypeFilters({".ply"});
+        save_ply_mesh_dialog.SetTitle("Save basic triangle PLY");
     }
 
-    save_screenshot_dialog.Display();
-    if (save_screenshot_dialog.HasSelected()) {
-        // Save screenshot
-        std::string path = save_screenshot_dialog.GetSelected().string();
-        save_screenshot_dialog.ClearSelected();
-        int width = rend.camera.width, height = rend.camera.height;
-        std::vector<unsigned char> windowPixels(4 * width * height);
-        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE,
-                     &windowPixels[0]);
-
-        std::vector<unsigned char> flippedPixels(4 * width * height);
-        for (int row = 0; row < height; ++row)
-            memcpy(&flippedPixels[row * width * 4],
-                   &windowPixels[(height - row - 1) * width * 4], 4 * width);
-
-        if (path.size() < 4 ||
-            path.compare(path.size() - 4, 4, ".png", 0, 4) != 0) {
-            path.append(".png");
-        }
-        if (internal::write_png_file(path, flippedPixels.data(), width,
-                                     height)) {
-            printf("Wrote %s", path.c_str());
+    save_ply_mesh_dialog.Display();
+    if (save_ply_mesh_dialog.HasSelected()) {
+        std::string path = save_ply_mesh_dialog.GetSelected().string();
+        save_ply_mesh_dialog.ClearSelected();
+        if (rend.quadric.mesh != nullptr) {
+            rend.quadric.mesh->save_ply(path);
+            tlog::success() << "PLY mesh saved to " << path;
         } else {
-            printf("Failed to save screenshot\n");
+            tlog::error() << "Failed to save mesh... something wrong";
         }
     }
 
@@ -224,6 +205,10 @@ void draw_imgui(VolumeRenderer& rend
                 ImGui::Text("Vertices: %d", quadric.mesh->n_verts());
                 ImGui::Text("Triangles: %d", quadric.mesh->n_faces());
                 ImGui::Checkbox("Render Mesh", &quadric.render_mesh);
+                ImGui::SameLine();
+                if (ImGui::Button("Save PLY")) {
+                    save_ply_mesh_dialog.Open();
+                }
             }
             ImGui::TreePop();
         }
