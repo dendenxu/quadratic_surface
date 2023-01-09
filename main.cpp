@@ -96,58 +96,59 @@ void draw_imgui(VolumeRenderer& rend
     // Begin window
     ImGui::Begin(title);
 
-    ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-    if (ImGui::CollapsingHeader("Camera")) {
-        // Update vectors indirectly since we need to normalize on change
-        // (press update button) and it would be too confusing to keep
-        // normalizing
-        static glm::vec3 world_up_tmp = rend.camera.v_world_up;
-        static glm::vec3 world_down_prev = rend.camera.v_world_up;
-        static glm::vec3 back_tmp = rend.camera.v_back;
-        static glm::vec3 forward_prev = rend.camera.v_back;
-        if (cam.v_world_up != world_down_prev)
-            world_up_tmp = world_down_prev = cam.v_world_up;
-        if (cam.v_back != forward_prev) back_tmp = forward_prev = cam.v_back;
+    // Hide camera controls
+    // ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+    // if (ImGui::CollapsingHeader("Camera")) {
+    //     // Update vectors indirectly since we need to normalize on change
+    //     // (press update button) and it would be too confusing to keep
+    //     // normalizing
+    //     static glm::vec3 world_up_tmp = rend.camera.v_world_up;
+    //     static glm::vec3 world_down_prev = rend.camera.v_world_up;
+    //     static glm::vec3 back_tmp = rend.camera.v_back;
+    //     static glm::vec3 forward_prev = rend.camera.v_back;
+    //     if (cam.v_world_up != world_down_prev)
+    //         world_up_tmp = world_down_prev = cam.v_world_up;
+    //     if (cam.v_back != forward_prev) back_tmp = forward_prev = cam.v_back;
 
-        ImGui::InputFloat3("center", glm::value_ptr(cam.center));
-        ImGui::InputFloat3("origin", glm::value_ptr(cam.origin));
-        ImGui::SliderFloat("clip_near", &cam.clip_near, 0.0001f, 10.f);
+    //     ImGui::InputFloat3("center", glm::value_ptr(cam.center));
+    //     ImGui::InputFloat3("origin", glm::value_ptr(cam.origin));
+    //     ImGui::SliderFloat("clip_near", &cam.clip_near, 0.0001f, 10.f);
 
-        static bool lock_fx_fy = true;
-        static float fx = cam.fx;  // gui state variable for duplication
-        static float fy = cam.fy;  // gui state variable for duplication (like one slider + one input for same location)
-        ImGui::Checkbox("fx=fy", &lock_fx_fy);
-        if (lock_fx_fy) {
-            if (ImGui::SliderFloat("focal", &cam.fx, 10.f, 50000.f)) {
-                cam.fy = cam.fx;
-            }
-        } else {
-            ImGui::SliderFloat("fx", &cam.fx, 10.f, 50000.f);
-            ImGui::SliderFloat("fy", &cam.fy, 10.f, 50000.f);
-            ImGui::InputFloat("fx", &cam.fx);
-            ImGui::InputFloat("fy", &cam.fy);
-        }
+    //     static bool lock_fx_fy = true;
+    //     static float fx = cam.fx;  // gui state variable for duplication
+    //     static float fy = cam.fy;  // gui state variable for duplication (like one slider + one input for same location)
+    //     ImGui::Checkbox("fx=fy", &lock_fx_fy);
+    //     if (lock_fx_fy) {
+    //         if (ImGui::SliderFloat("focal", &cam.fx, 10.f, 50000.f)) {
+    //             cam.fy = cam.fx;
+    //         }
+    //     } else {
+    //         ImGui::SliderFloat("fx", &cam.fx, 10.f, 50000.f);
+    //         ImGui::SliderFloat("fy", &cam.fy, 10.f, 50000.f);
+    //         ImGui::InputFloat("fx", &cam.fx);
+    //         ImGui::InputFloat("fy", &cam.fy);
+    //     }
 
-        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-        if (ImGui::TreeNode("Directions")) {
-            ImGui::InputFloat3("world_up", glm::value_ptr(world_up_tmp));
-            ImGui::InputFloat3("back", glm::value_ptr(back_tmp));
-            if (ImGui::Button("normalize & update dirs")) {
-                cam.v_world_up = glm::normalize(world_up_tmp);
-                cam.v_back = glm::normalize(back_tmp);
-            }
-            ImGui::TreePop();
-        }
-        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-        if (ImGui::TreeNode("Transform")) {
-            ImGui::Checkbox("Lock Transform", &cam.lock_trans);
-            ImGui::InputFloat3("x", &cam.c2w[0][0]);
-            ImGui::InputFloat3("y", &cam.c2w[1][0]);
-            ImGui::InputFloat3("z", &cam.c2w[2][0]);
-            ImGui::InputFloat3("t", &cam.c2w[3][0]);
-            ImGui::TreePop();
-        }
-    }  // End camera node
+    //     ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+    //     if (ImGui::TreeNode("Directions")) {
+    //         ImGui::InputFloat3("world_up", glm::value_ptr(world_up_tmp));
+    //         ImGui::InputFloat3("back", glm::value_ptr(back_tmp));
+    //         if (ImGui::Button("normalize & update dirs")) {
+    //             cam.v_world_up = glm::normalize(world_up_tmp);
+    //             cam.v_back = glm::normalize(back_tmp);
+    //         }
+    //         ImGui::TreePop();
+    //     }
+    //     ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+    //     if (ImGui::TreeNode("Transform")) {
+    //         ImGui::Checkbox("Lock Transform", &cam.lock_trans);
+    //         ImGui::InputFloat3("x", &cam.c2w[0][0]);
+    //         ImGui::InputFloat3("y", &cam.c2w[1][0]);
+    //         ImGui::InputFloat3("z", &cam.c2w[2][0]);
+    //         ImGui::InputFloat3("t", &cam.c2w[3][0]);
+    //         ImGui::TreePop();
+    //     }
+    // }  // End camera node
 
     ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
     if (ImGui::CollapsingHeader("Quadric")) {
@@ -180,6 +181,7 @@ void draw_imgui(VolumeRenderer& rend
             ImGui::SliderInt("resolution", &quadric.resolution, 128, 1024);  // super sampling ratio
             if (ImGui::Button("Polygonize")) {
                 quadric.marching_cubes();
+                quadric.render_mesh = true;  // show mesh after polygonization
             }
             // ImGui::Text("Polygonization might take a while...");
             // ImGui::Text("See console for progress update...");
@@ -189,7 +191,7 @@ void draw_imgui(VolumeRenderer& rend
                 path.reserve(256);  // filename buffer
 
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
                 if (ImGui::Button("Save PLY")) {
                     quadric.mesh->save_ply(path);
@@ -368,6 +370,7 @@ GLFWwindow* glfw_init(const int width, const int height) {
     glClearDepth(1.0);
     glDepthFunc(GL_LESS);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glDisable(GL_CULL_FACE);
 
     if (window == nullptr) {
         glfwTerminate();
@@ -426,7 +429,7 @@ int main(int argc, char* argv[]) {
     cxxoptions.add_options()
         ("nogui", "disable imgui", cxxopts::value<bool>())
         ("center", "camera center position (world); ignored for NDC",
-                cxxopts::value<std::vector<float>>()->default_value("0,0,-10.0"))
+                cxxopts::value<std::vector<float>>()->default_value("0,0,3"))
         ("back", "camera's back direction unit vector (world) for orientation; ignored for NDC",
                 cxxopts::value<std::vector<float>>()->default_value("0,0,1"))
         ("origin", "origin for right click rotation controls; ignored for NDC",

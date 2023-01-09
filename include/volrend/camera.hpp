@@ -10,7 +10,7 @@
 #include "volrend/common.hpp"
 
 namespace volrend {
-static const float CAMERA_DEFAULT_FOCAL_LENGTH = 1111.11f;
+static const float CAMERA_DEFAULT_FOCAL_LENGTH = 2500.0f;
 
 struct Camera {
     Camera(int width = 960, int height = 540,

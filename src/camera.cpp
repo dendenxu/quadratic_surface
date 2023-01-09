@@ -119,11 +119,11 @@ void Camera::drag_update(float x, float y) {
                      delta.y * drag_state->drag_start_up;
         }
     } else {
+        if (drag_state->about_origin) delta *= -1.f;
         glm::mat4 m(1.0f), m_tmp(1.0f);
 
         m_tmp = glm::rotate(m_tmp, -delta.y, drag_state->drag_start_right);
-        glm::vec3 v_back_tmp =
-            m_tmp * glm::vec4(drag_state->drag_start_back, 1.f);
+        glm::vec3 v_back_tmp = m_tmp * glm::vec4(drag_state->drag_start_back, 1.f);
 
         m = glm::rotate(m, fmodf(-delta.x, 2.f * (float)M_PI), v_world_up);
         m = glm::rotate(m, -delta.y, drag_state->drag_start_right);
