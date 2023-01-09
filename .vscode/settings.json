@@ -1,5 +1,5 @@
 {
     "cmake.configureSettings": {
-        "VOLREND_USE_CUDA": "OFF"
+        // "VOLREND_USE_CUDA": "OFF"
     }
 }

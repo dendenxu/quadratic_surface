@@ -27,7 +27,6 @@ option(VOLREND_USE_SYSTEM_GLFW
 option(VOLREND_BUILD_INSTALL "Build the install target" ON)
 option(VOLREND_BUILD_PYTHON "Build Python bindings" OFF)
 option(VOLREND_USE_FFAST_MATH "Use -ffast-math" OFF)
-option(VOLREND_USE_CUDA "Use CUDA for rendering" OFF)
 
 set(CMAKE_CXX_STACK_SIZE "10000000")
 set(CMAKE_CXX_STANDARD 17)
@@ -215,7 +214,7 @@ else()
     set(DEPENDENCIES ${DEPENDENCIES} glfw)
 endif()
 
-    find_package(Threads REQUIRED)
+find_package(Threads REQUIRED)
 
 # create volrend.hpp
 set(COMMON_HPP_PATH "${PROJECT_BINARY_DIR}/include/volrend/common.hpp")

@@ -1,25 +1,19 @@
 #include "volrend/common.hpp"
 
 // Shader backend only enabled when build with VOLREND_USE_CUDA=OFF
-#ifndef VOLREND_CUDA
+#include <GL/glew.h>
+
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
 #include <string>
 
+#include "volrend/internal/rt_frag.inl"
+#include "volrend/internal/shader.hpp"
 #include "volrend/mesh.hpp"
 #include "volrend/renderer.hpp"
 
-#ifdef __EMSCRIPTEN__
-// WebGL
-#include <GLES3/gl3.h>
-#else
-#include <GL/glew.h>
-#endif
-
-#include "volrend/internal/rt_frag.inl"
-#include "volrend/internal/shader.hpp"
 
 namespace volrend {
 
@@ -192,5 +186,3 @@ void VolumeRenderer::resize(int width, int height) { impl->resize(width, height)
 const char* VolumeRenderer::get_backend() { return "Shader"; }
 
 }  // namespace volrend
-
-#endif
