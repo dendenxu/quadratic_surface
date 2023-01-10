@@ -99,6 +99,8 @@ void draw_imgui(VolumeRenderer& rend
     if (ImGui::CollapsingHeader("Quadric")) {
         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
         if (ImGui::TreeNode("Parameters")) {
+            ImGui::Text("Quadratic Function: ");
+            ImGui::TextWrapped("f(x,y,z) = Ax^2 + 2Bxy + 2Cxz + 2Dx + Ey^2 + 2Fyz + Gy + Hz^2 + 2Iz + J = 0");
             ImGui::SliderFloat("A", &quadric.A, -10.0f, 10.f);
             ImGui::SliderFloat("B", &quadric.B, -10.0f, 10.f);
             ImGui::SliderFloat("C", &quadric.C, -10.0f, 10.f);
