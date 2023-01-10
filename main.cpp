@@ -123,7 +123,7 @@ void draw_imgui(VolumeRenderer& rend
         }
         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
         if (ImGui::TreeNode("Polygonization")) {
-            ImGui::SliderInt("resolution", &quadric.resolution, 128, 1024);  // super sampling ratio
+            ImGui::SliderInt("resolution", &quadric.resolution, 8, 512);  // super sampling ratio
             if (ImGui::Button("Polygonize")) {
                 quadric.marching_cubes();
                 quadric.render_mesh = true;  // show mesh after polygonization
@@ -374,7 +374,7 @@ int main(int argc, char* argv[]) {
     cxxoptions.add_options()
         ("nogui", "disable imgui", cxxopts::value<bool>())
         ("center", "camera center position (world); ignored for NDC",
-                cxxopts::value<std::vector<float>>()->default_value("0,0,6"))
+                cxxopts::value<std::vector<float>>()->default_value("0,0,5"))
         ("back", "camera's back direction unit vector (world) for orientation; ignored for NDC",
                 cxxopts::value<std::vector<float>>()->default_value("0,0,1"))
         ("origin", "origin for right click rotation controls; ignored for NDC",
