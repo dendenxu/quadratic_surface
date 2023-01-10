@@ -2,7 +2,7 @@
 
 ![demo](readme.assets/demo.gif)
 
-The ray-casting shown in the demo might look like mesh flat shading. This is because the gif compression algorithm reduces the number of colors available greatly, make the actual smooth shading results look coarse. Please compile and run the code to see the actual results.
+The ray-casting shown in the demo might look like mesh flat shading. This is because the gif compression algorithm reduces the number of colors available greatly, making the actual smooth shading results look coarse. Please compile and run the code to see the actual ray-casting renders.
 
 ## Inspiration
 
